@@ -173,7 +173,7 @@ export const learnerDashboardContent: DashboardContent = {
       {
         label: "Submission ZIP",
         fileName: "submission-level-1.zip",
-        value: "Upload a single .zip containing agent.py, output.txt, .env, and README.md",
+        value: "\nUpload a single .zip containing agent.py, output.txt, .env, and README.md",
         fullWidth: true,
         variant: "upload"
       },
