@@ -22,7 +22,10 @@ export function LearnerDashboard({ content }: LearnerDashboardProps) {
         />
         <div className="stack">
           <ActiveAssessmentPanel assessment={content.activeAssessment} />
-          <SubmissionWorkspace workspace={content.submissionWorkspace} />
+          <SubmissionWorkspace
+            assessment={content.activeAssessment}
+            workspace={content.submissionWorkspace}
+          />
         </div>
       </section>
       <br></br>

@@ -83,6 +83,7 @@ export const learnerDashboardContent: DashboardContent = {
     }
   ],
   activeAssessment: {
+    id: "assessment-1",
     eyebrow: "Active Assessment",
     title: "Level 1 - Basic LLM Agent",
     status: "Hands-on assessment",

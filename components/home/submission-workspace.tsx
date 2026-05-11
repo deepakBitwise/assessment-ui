@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useState, type ChangeEvent } from "react";
 import type {
+  ActiveAssessment,
   SubmissionField,
   SubmissionWorkspace as SubmissionWorkspaceData
 } from "@/types/assessment";
@@ -20,6 +21,7 @@ type UploadUrlResponse = {
 };
 
 type SubmissionWorkspaceProps = {
+  assessment: ActiveAssessment;
   workspace: SubmissionWorkspaceData;
 };
 
@@ -48,7 +50,16 @@ function getValueClassName(field: SubmissionField) {
   }
 }
 
-export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
+function getUploadField(
+  fields: SubmissionWorkspaceData["fields"]
+): SubmissionField | undefined {
+  return fields.find((field) => field.variant === "upload");
+}
+
+export function SubmissionWorkspace({
+  assessment,
+  workspace
+}: SubmissionWorkspaceProps) {
   const fileInputId = useId();
   const [selectedZip, setSelectedZip] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<
@@ -59,10 +70,24 @@ export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
   );
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null);
+  const uploadField = getUploadField(workspace.fields);
+  const backendFileName = uploadField?.fileName ?? null;
+  const hasBackendFile = typeof backendFileName === "string" && backendFileName.trim().length > 0;
 
   const hasZipSelection = Boolean(selectedZip);
   const isZipUploaded = uploadState === "uploaded" || uploadState === "submitted";
   const isBusy = uploadState === "uploading" || uploadState === "submitting";
+
+  useEffect(() => {
+    if (hasBackendFile) {
+      setStatusMessage(
+        `${backendFileName} is already attached to this assessment. You can download it or reupload a new ZIP.`
+      );
+      return;
+    }
+
+    setStatusMessage("Upload a single .zip file to enable submission.");
+  }, [backendFileName, hasBackendFile]);
 
   function handleZipChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFile = event.target.files?.[0] ?? null;
@@ -162,13 +187,45 @@ export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
       return;
     }
 
-    setUploadState("submitting");
+    try {
+      setUploadState("submitting");
+      setStatusMessage("Submitting assessment...");
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/submit`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          assessment_id: assessment.id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment submission failed with ${response.status}.`);
+      }
+
+      setUploadState("submitted");
+      setStatusMessage(
+        `${selectedZip?.name ?? "Submission ZIP"} submitted successfully.` +
+          (uploadedFileKey ? ` File key: ${uploadedFileKey}.` : "") +
+          (uploadedFileUrl ? ` File URL: ${uploadedFileUrl}.` : "")
+      );
+    } catch (error) {
+      setUploadState("uploaded");
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Assessment submission failed. Please try again."
+      );
+    }
+  }
+
+  function handleDownload() {
     setStatusMessage(
-      `${selectedZip?.name ?? "Submission ZIP"} is ready for your submission API call.` +
-        (uploadedFileKey ? ` File key: ${uploadedFileKey}.` : "") +
-        (uploadedFileUrl ? ` File URL: ${uploadedFileUrl}.` : "")
+      `Existing submission available: ${backendFileName}. Download endpoint is not configured in the UI yet.`
     );
-    setUploadState("submitted");
   }
 
   return (
@@ -186,18 +243,44 @@ export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
             <div className="form-card__label">{field.label}</div>
             <div className={getValueClassName(field)}>
               {field.variant === "upload" ? (
-                <label className="upload-control" htmlFor={fileInputId}>
-                  <input
-                    accept=".zip,application/zip"
-                    className="upload-control__input"
-                    id={fileInputId}
-                    onChange={handleZipChange}
-                    type="file"
-                  />
-                  <strong>{selectedZip?.name ?? field.fileName}</strong>
-                  <br />
-                  <span>{field.value}</span>
-                </label>
+                hasBackendFile ? (
+                  <div className="upload-box__content">
+                    <strong>{backendFileName}</strong>
+                    <span>{field.value}</span>
+                    <div className="upload-box__actions">
+                      <button
+                        className="button button--secondary upload-box__action"
+                        onClick={handleDownload}
+                        type="button"
+                      >
+                        Download
+                      </button>
+                      <label className="button button--secondary upload-box__action" htmlFor={fileInputId}>
+                        Reupload
+                        <input
+                          accept=".zip,application/zip"
+                          className="upload-control__input"
+                          id={fileInputId}
+                          onChange={handleZipChange}
+                          type="file"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="upload-control" htmlFor={fileInputId}>
+                    <input
+                      accept=".zip,application/zip"
+                      className="upload-control__input"
+                      id={fileInputId}
+                      onChange={handleZipChange}
+                      type="file"
+                    />
+                    <strong>{selectedZip?.name ?? "No file uploaded yet"}</strong>
+                    <br />
+                    <span>{field.value}</span>
+                  </label>
+                )
               ) : (
                 field.value
               )}
@@ -208,7 +291,9 @@ export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
 
       <div className="submission-actions">
         <p className="submission-actions__note">
-          ZIP upload is mandatory before final submit.
+          {hasBackendFile
+            ? "A previous submission already exists for this assessment."
+            : "ZIP upload is mandatory before assessment submission."}
         </p>
         <div className="submission-actions__buttons">
           <button
@@ -217,7 +302,11 @@ export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
             onClick={handleUpload}
             type="button"
           >
-            {uploadState === "uploading" ? "Uploading..." : "Upload ZIP"}
+            {uploadState === "uploading"
+              ? "Uploading..."
+              : hasBackendFile
+                ? "Reupload ZIP"
+                : "Upload ZIP"}
           </button>
           <button
             className="button button--primary"
@@ -225,7 +314,9 @@ export function SubmissionWorkspace({ workspace }: SubmissionWorkspaceProps) {
             onClick={handleFinalSubmit}
             type="button"
           >
-            {uploadState === "submitting" ? "Submitting..." : "Final Submit"}
+            {uploadState === "submitting"
+              ? "Submitting..."
+              : "Assessment Submission"}
           </button>
         </div>
         <p className="submission-actions__status" role="status">

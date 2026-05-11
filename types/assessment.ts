@@ -44,6 +44,7 @@ export type Profile = {
 };
 
 export type ActiveAssessment = {
+  id: string;
   eyebrow: string;
   title: string;
   status: string;
@@ -57,7 +58,7 @@ export type ActiveAssessment = {
 export type SubmissionField = {
   label: string;
   value: string;
-  fileName?: string;
+  fileName?: string | null;
   fullWidth?: boolean;
   variant?: "default" | "upload" | "textarea";
 };
