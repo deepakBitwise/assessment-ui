@@ -788,6 +788,24 @@ textarea {
   cursor: pointer;
 }
 
+.upload-box__content {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.upload-box__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.upload-box__action {
+  margin-top: 4px;
+}
+
 .upload-control__input {
   position: absolute;
   width: 1px;

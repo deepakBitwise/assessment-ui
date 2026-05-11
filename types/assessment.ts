@@ -44,6 +44,7 @@ export type Profile = {
 };
 
 export type ActiveAssessment = {
+  id: string;
   eyebrow: string;
   title: string;
   status: string;
@@ -57,7 +58,7 @@ export type ActiveAssessment = {
 export type SubmissionField = {
   label: string;
   value: string;
-  fileName?: string;
+  fileName?: string | null;
   fullWidth?: boolean;
   variant?: "default" | "upload" | "textarea";
 };
@@ -157,4 +158,23 @@ export type RouteCard = {
   label: string;
   description: string;
   status?: string;
+};
+
+export type Assessment = {
+  id: string;
+  problem_statement: string;
+  deliverables: string[];
+  attachment_object_name: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssessmentResponse = {
+  data: Assessment[];
+  count: number;
+};
+
+export type AssessmentUpdatePayload = {
+  problem_statement: string;
+  deliverables: string[];
 };
