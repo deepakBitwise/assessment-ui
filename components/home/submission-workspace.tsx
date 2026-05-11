@@ -128,14 +128,15 @@ export function SubmissionWorkspace({
       setUploadState("uploading");
       setStatusMessage("Requesting upload URL...");
 
-      const uploadUrlResponse = await fetch(`${API_BASE_URL}/api/v1/files/upload-url`, {
+      const uploadUrlResponse = await fetch(`${API_BASE_URL}/files/upload-url`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           filename: selectedZip.name,
-          content_type: selectedZip.type || "application/zip"
+          content_type: selectedZip.type || "application/zip",
+          assessment_id: assessment.id
         })
       });
 
@@ -191,7 +192,7 @@ export function SubmissionWorkspace({
       setUploadState("submitting");
       setStatusMessage("Submitting assessment...");
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/submit`, {
+      const response = await fetch(`${API_BASE_URL}/submit`, {
         method: "POST",
         headers: {
           accept: "application/json",
@@ -208,9 +209,9 @@ export function SubmissionWorkspace({
 
       setUploadState("submitted");
       setStatusMessage(
-        `${selectedZip?.name ?? "Submission ZIP"} submitted successfully.` +
-          (uploadedFileKey ? ` File key: ${uploadedFileKey}.` : "") +
-          (uploadedFileUrl ? ` File URL: ${uploadedFileUrl}.` : "")
+        `Solution with : ${selectedZip?.name ?? "Submission ZIP"} submitted successfully.` +
+        (uploadedFileKey ? ` File key: ${uploadedFileKey}.` : "") +
+        (uploadedFileUrl ? ` File URL: ${uploadedFileUrl}.` : "")
       );
     } catch (error) {
       setUploadState("uploaded");
@@ -226,6 +227,7 @@ export function SubmissionWorkspace({
     setStatusMessage(
       `Existing submission available: ${backendFileName}. Download endpoint is not configured in the UI yet.`
     );
+    //TODO: Implement file download functionality when backend endpoint is available. This may involve fetching a download URL from the backend and triggering a download in the browser.
   }
 
   return (

@@ -56,7 +56,7 @@ export function LearnerDashboardShell({
     async function loadAssessment() {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/v1/assessments/${initialContent.activeAssessment.id}`,
+          `${API_BASE_URL}/assessments/${initialContent.activeAssessment.id}`,
           {
             method: "GET",
             headers: {
@@ -80,6 +80,9 @@ export function LearnerDashboardShell({
           ...currentContent,
           activeAssessment: {
             ...currentContent.activeAssessment,
+            id: isNonEmptyText(payload.id)
+              ? payload.id
+              : initialContent.activeAssessment.id,
             scenarioBody: isNonEmptyText(payload.problem_statement)
               ? payload.problem_statement
               : initialContent.activeAssessment.scenarioBody,

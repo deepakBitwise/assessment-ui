@@ -1,12 +1,11 @@
-import { AdministratorPlaceholder } from "@/components/home/administrator-placeholder";
+import { AssessmentList } from "@/components/admin/assessment-list";
 import { AppNav } from "@/components/navigation/app-nav";
-import { adminPlaceholderContent } from "@/data/dashboard-content";
 
 export default function AdminPage() {
   return (
     <main className="shell">
       <AppNav current="admin" />
-      <AdministratorPlaceholder content={adminPlaceholderContent} />
+      <AssessmentList />
     </main>
   );
 }

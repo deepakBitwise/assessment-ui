@@ -159,3 +159,22 @@ export type RouteCard = {
   description: string;
   status?: string;
 };
+
+export type Assessment = {
+  id: string;
+  problem_statement: string;
+  deliverables: string[];
+  attachment_object_name: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssessmentResponse = {
+  data: Assessment[];
+  count: number;
+};
+
+export type AssessmentUpdatePayload = {
+  problem_statement: string;
+  deliverables: string[];
+};
