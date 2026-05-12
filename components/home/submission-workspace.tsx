@@ -223,11 +223,62 @@ export function SubmissionWorkspace({
     }
   }
 
-  function handleDownload() {
-    setStatusMessage(
-      `Existing submission available: ${backendFileName}. Download endpoint is not configured in the UI yet.`
-    );
-    //TODO: Implement file download functionality when backend endpoint is available. This may involve fetching a download URL from the backend and triggering a download in the browser.
+  async function handleDownload() {
+    if (!hasBackendFile || !backendFileName) {
+      setStatusMessage("No existing submission file is available to download.");
+      return;
+    }
+
+    const encodedPath = backendFileName
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/");
+
+    try {
+      setStatusMessage("Requesting download URL...");
+
+      const downloadResponse = await fetch(
+        `${API_BASE_URL}/files/download-url/${encodedPath}`,
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (!downloadResponse.ok) {
+        throw new Error(`Download URL request failed with ${downloadResponse.status}.`);
+      }
+
+      const downloadPayload = await downloadResponse.json();
+      const downloadUrl =
+        downloadPayload.download_url ??
+        downloadPayload.url ??
+        downloadPayload.presigned_url ??
+        downloadPayload.file_url ??
+        downloadPayload.public_url;
+
+      if (!downloadUrl) {
+        throw new Error("Download URL was not returned by the backend.");
+      }
+
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer";
+      anchor.download = backendFileName.split("/").pop() ?? "download.zip";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      setStatusMessage(`Download started for ${backendFileName}.`);
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Download failed. Please try again."
+      );
+    }
   }
 
   return (
