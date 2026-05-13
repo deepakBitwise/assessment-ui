@@ -12,6 +12,7 @@ type ProgressRailProps = {
   levels: Level[];
   liveEvaluationStatus: LiveEvaluationStatus;
   rubric: RubricItem[];
+  submission: any;
 };
 
 const levelStateLabel: Record<LevelState, string> = {
@@ -40,14 +41,36 @@ function getLiveTierSummary(liveEvaluationStatus: LiveEvaluationStatus) {
   };
 }
 
+function getStatusClass(status?: string) {
+  if (!status) return "pending";
+
+  if (status === "PASSED") return "passed";
+
+  if (status === "REJECTED") return "failed";
+
+  return "pending";
+}
+
+function getStatusLabel(status?: string) {
+  if (!status) return "Pending";
+
+  if (status === "PASSED") return "Completed";
+
+  if (status === "REJECTED") return "Failed";
+
+  return "Pending";
+}
+
 export function ProgressRail({
   levels,
   liveEvaluationStatus,
-  rubric
+  rubric,
+  submission
 }: ProgressRailProps) {
   const [expandedLevels, setExpandedLevels] = useState<string[]>(() =>
     levels.filter((level) => level.state === "live").map((level) => level.id)
   );
+
   const liveTierSummary = getLiveTierSummary(liveEvaluationStatus);
 
   function toggleLevel(levelId: string) {
@@ -65,6 +88,7 @@ export function ProgressRail({
           <p className="eyebrow">Learning Path</p>
           <h2>Seven-level progression rail</h2>
         </div>
+
         <span className="panel__badge">Strict gating</span>
       </div>
 
@@ -73,18 +97,25 @@ export function ProgressRail({
           const isExpanded = expandedLevels.includes(level.id);
 
           return (
-            <article className={`level-card level-card--${level.state}`} key={level.id}>
+            <article
+              className={`level-card level-card--${level.state}`}
+              key={level.id}
+            >
               <div className="level-card__index">
                 <span>{level.id}</span>
                 {index < levels.length - 1 ? <i /> : null}
               </div>
+
               <div className="level-card__body">
                 <div className="level-card__header">
                   <div>
                     <h3>{level.title}</h3>
                     <p>{level.capability}</p>
                   </div>
-                  <span className="chip">{levelStateLabel[level.state]}</span>
+
+                  <span className="chip">
+                    {levelStateLabel[level.state]}
+                  </span>
                 </div>
 
                 <p className="level-card__brief">{level.brief}</p>
@@ -95,26 +126,57 @@ export function ProgressRail({
                       <div className="level-live-status">
                         <div className="level-live-status__header">
                           <strong>Live status</strong>
-                          <span
-                            className={`status-inline status-inline--${liveTierSummary.activeTier?.state ?? "pending"}`}
-                          >
-                            {liveTierSummary.activeTier?.state === "running"
-                              ? "\u25cf"
-                              : "\u25cb"}{" "}
-                            {liveTierSummary.activeTier?.statusLabel ?? "pending"}
-                          </span>
                         </div>
+
                         <p className="level-live-status__meta">
                           Submission {liveEvaluationStatus.submissionId} |{" "}
                           {liveEvaluationStatus.levelAttempt} |{" "}
                           {liveEvaluationStatus.submittedAgo}
                         </p>
-                        <p className="level-live-status__title">
-                          {liveTierSummary.activeTier?.title ?? "Evaluation queued"}
-                        </p>
-                        <p className="level-live-status__detail">
-                          {liveTierSummary.detail}
-                        </p>
+
+                        <div className="tier-status-list">
+                          <div className="tier-status-item">
+                            <strong>
+                              Tier 1 - Automated Checks
+                            </strong>
+
+                            <span
+  className={`status ${getStatusClass(
+    submission?.automated_check
+  )}`}
+>
+  {getStatusLabel(submission?.automated_check)}
+</span>
+                          </div>
+
+                          <div className="tier-status-item">
+                            <strong>
+                              Tier 2 - LLM Judge
+                            </strong>
+
+                            <span
+  className={`status ${getStatusClass(
+    submission?.llm_judge
+  )}`}
+>
+  {getStatusLabel(submission?.llm_judge)}
+</span>
+                          </div>
+
+                          <div className="tier-status-item">
+                            <strong>
+                              Tier 3 - Human Reviewer
+                            </strong>
+
+                            <span
+  className={`status ${getStatusClass(
+    submission?.human_reviewer
+  )}`}
+>
+  {getStatusLabel(submission?.human_reviewer)}
+</span>
+                          </div>
+                        </div>
                       </div>
                     ) : null}
 
@@ -123,6 +185,7 @@ export function ProgressRail({
                         <strong>Scoring preview</strong>
                         <span>{level.course}</span>
                       </div>
+
                       <div className="level-score-preview__list">
                         {rubric.map((item) => (
                           <div
@@ -133,6 +196,7 @@ export function ProgressRail({
                               <strong>{item.name}</strong>
                               <span>{item.weight}</span>
                             </div>
+
                             <em>{item.score}</em>
                           </div>
                         ))}
@@ -142,7 +206,12 @@ export function ProgressRail({
                 ) : null}
 
                 <div className="level-card__footer">
-                  <span>{isExpanded ? "Expanded details visible" : level.course}</span>
+                  <span>
+                    {isExpanded
+                      ? "Expanded details visible"
+                      : level.course}
+                  </span>
+
                   <button
                     className="text-link"
                     onClick={() => toggleLevel(level.id)}

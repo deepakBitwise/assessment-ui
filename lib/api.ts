@@ -47,3 +47,27 @@ export async function updateAssessment(
         throw error;
     }
 }
+
+export async function fetchSubmission(submissionId: string) {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/submissions/${submissionId}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                },
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch submission: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching submission:', error);
+        throw error;
+    }
+}
