@@ -48,7 +48,7 @@ export async function updateAssessment(
     }
 }
 
-export async function fetchSubmission(submissionId: string) {
+export async function fetchSubmission(submissionId: string): Promise<unknown> {
     try {
         const response = await fetch(
             `${API_BASE_URL}/submissions/${submissionId}`,
@@ -70,6 +70,8 @@ export async function fetchSubmission(submissionId: string) {
         console.error('Error fetching submission:', error);
         throw error;
     }
+}
+
 type DownloadUrlResponse = {
     download_url?: string;
     url?: string;

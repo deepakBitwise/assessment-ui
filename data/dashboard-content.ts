@@ -117,7 +117,7 @@ export const learnerDashboardContent: DashboardContent = {
     ]
   },
   liveEvaluationStatus: {
-    submissionId: "sub_01HFG7T",
+    submissionId: "",//DEFAULT : "submission-1",
     levelAttempt: "L1 attempt 1",
     submittedAgo: "submitted 2 min ago",
     tiers: [

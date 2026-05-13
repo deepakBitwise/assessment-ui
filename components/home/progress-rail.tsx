@@ -21,6 +21,12 @@ const levelStateLabel: Record<LevelState, string> = {
   locked: "Locked"
 };
 
+/**
+ * Maps tier index to submission object property keys
+ * Maintains order: Tier 0 → automated_check, Tier 1 → llm_judge, Tier 2 → human_reviewer
+ */
+const tierStateMap = ['automated_check', 'llm_judge', 'human_reviewer'] as const;
+
 function getLiveTierSummary(liveEvaluationStatus: LiveEvaluationStatus) {
   const activeTier =
     liveEvaluationStatus.tiers.find((tier) => tier.state === "running") ??
@@ -72,6 +78,8 @@ export function ProgressRail({
   );
 
   const liveTierSummary = getLiveTierSummary(liveEvaluationStatus);
+  const displayedSubmissionId =
+    submission?.submission_id ?? liveEvaluationStatus.submissionId;
 
   function toggleLevel(levelId: string) {
     setExpandedLevels((current) =>
@@ -122,60 +130,34 @@ export function ProgressRail({
 
                 {isExpanded ? (
                   <div className="level-card__details">
-                    {level.state === "live" ? (
+                    {level.state === "live" && displayedSubmissionId ? ( // Remove this condition to always show live status when expanded
                       <div className="level-live-status">
                         <div className="level-live-status__header">
                           <strong>Live status</strong>
                         </div>
 
                         <p className="level-live-status__meta">
-                          Submission {liveEvaluationStatus.submissionId} |{" "}
+                          Submission {displayedSubmissionId} |{" "}
                           {liveEvaluationStatus.levelAttempt} |{" "}
                           {liveEvaluationStatus.submittedAgo}
                         </p>
 
                         <div className="tier-status-list">
-                          <div className="tier-status-item">
-                            <strong>
-                              Tier 1 - Automated Checks
-                            </strong>
+                          {liveEvaluationStatus.tiers.map((tier, index) => {
+                            const stateKey = tierStateMap[index];
+                            const tierState = submission?.[stateKey];
 
-                            <span
-  className={`status ${getStatusClass(
-    submission?.automated_check
-  )}`}
->
-  {getStatusLabel(submission?.automated_check)}
-</span>
-                          </div>
-
-                          <div className="tier-status-item">
-                            <strong>
-                              Tier 2 - LLM Judge
-                            </strong>
-
-                            <span
-  className={`status ${getStatusClass(
-    submission?.llm_judge
-  )}`}
->
-  {getStatusLabel(submission?.llm_judge)}
-</span>
-                          </div>
-
-                          <div className="tier-status-item">
-                            <strong>
-                              Tier 3 - Human Reviewer
-                            </strong>
-
-                            <span
-  className={`status ${getStatusClass(
-    submission?.human_reviewer
-  )}`}
->
-  {getStatusLabel(submission?.human_reviewer)}
-</span>
-                          </div>
+                            return (
+                              <div className="tier-status-item" key={tier.title}>
+                                <strong>{tier.title}</strong>
+                                <span
+                                  className={`status ${getStatusClass(tierState)}`}
+                                >
+                                  {getStatusLabel(tierState)}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}

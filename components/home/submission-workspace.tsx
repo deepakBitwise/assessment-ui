@@ -24,6 +24,7 @@ type UploadUrlResponse = {
 type SubmissionWorkspaceProps = {
   assessment: ActiveAssessment;
   workspace: SubmissionWorkspaceData;
+  onSubmissionSubmitted: (submissionId: string) => void;
 };
 
 function getFieldClassName(field: SubmissionField) {
@@ -59,7 +60,8 @@ function getUploadField(
 
 export function SubmissionWorkspace({
   assessment,
-  workspace
+  workspace,
+  onSubmissionSubmitted
 }: SubmissionWorkspaceProps) {
   const fileInputId = useId();
   const [selectedZip, setSelectedZip] = useState<File | null>(null);
@@ -208,9 +210,17 @@ export function SubmissionWorkspace({
         throw new Error(`Assessment submission failed with ${response.status}.`);
       }
 
+      const payload = await response.json();
+      const submissionId = payload?.submission_id ?? null;
+
+      if (submissionId) {
+        onSubmissionSubmitted(submissionId);
+      }
+
       setUploadState("submitted");
       setStatusMessage(
         `Solution with : ${selectedZip?.name ?? "Submission ZIP"} submitted successfully.` +
+        (submissionId ? ` Submission ID: ${submissionId}.` : "") +
         (uploadedFileKey ? ` File key: ${uploadedFileKey}.` : "") +
         (uploadedFileUrl ? ` File URL: ${uploadedFileUrl}.` : "")
       );
@@ -335,7 +345,8 @@ export function SubmissionWorkspace({
           </button>
           <button
             className="button button--primary"
-            disabled={!isZipUploaded || isBusy}
+            // disabled={!isZipUploaded || isBusy}
+            disabled={isBusy}
             onClick={handleFinalSubmit}
             type="button"
           >
