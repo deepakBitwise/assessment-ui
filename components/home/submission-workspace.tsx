@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type ChangeEvent } from "react";
+import { getPresignedDownloadUrl } from "@/lib/api";
 import type {
   ActiveAssessment,
   SubmissionField,
@@ -223,11 +224,33 @@ export function SubmissionWorkspace({
     }
   }
 
-  function handleDownload() {
-    setStatusMessage(
-      `Existing submission available: ${backendFileName}. Download endpoint is not configured in the UI yet.`
-    );
-    //TODO: Implement file download functionality when backend endpoint is available. This may involve fetching a download URL from the backend and triggering a download in the browser.
+  async function handleDownload() {
+    if (!hasBackendFile || !backendFileName) {
+      setStatusMessage("No existing submission file is available to download.");
+      return;
+    }
+
+    try {
+      setStatusMessage("Requesting download URL...");
+      const downloadUrl = await getPresignedDownloadUrl(backendFileName);
+
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer";
+      anchor.download = backendFileName.split("/").pop() ?? "download.zip";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      setStatusMessage(`Download started for ${backendFileName}.`);
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Download failed. Please try again."
+      );
+    }
   }
 
   return (
