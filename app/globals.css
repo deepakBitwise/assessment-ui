@@ -1138,3 +1138,43 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* existing css above */
+
+.tier-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.tier-status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f4f7f6;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status.passed {
+  background: #dff5e8;
+  color: #137a3b;
+}
+
+.status.failed {
+  background: #fde7e7;
+  color: #b42318;
+}
+
+.status.pending {
+  background: #fff4d6;
+  color: #b7791f;
+}
