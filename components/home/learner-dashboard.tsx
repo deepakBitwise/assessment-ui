@@ -23,27 +23,27 @@ export function LearnerDashboard({
   const [submission, setSubmission] = useState<any>(null);
 
   useEffect(() => {
-  async function loadSubmission() {
-    try {
-      const data = await fetchSubmission("submission-1");
-      setSubmission(data);
-    } catch (error) {
-      console.error("Failed to fetch submission", error);
+    async function loadSubmission() {
+      try {
+        const data = await fetchSubmission("submission-1");
+        setSubmission(data);
+      } catch (error) {
+        console.error("Failed to fetch submission", error);
+      }
     }
-  }
 
-  // Initial fetch
-  loadSubmission();
-
-  // Poll every 2 seconds
-  const interval = setInterval(() => {
+    // Initial fetch
     loadSubmission();
-  }, 2000);
 
-  // Cleanup
-  return () => clearInterval(interval);
+    // Poll every 2 seconds
+    const interval = setInterval(() => {
+      loadSubmission();
+    }, 2000);
 
-}, []);
+    // Cleanup
+    return () => clearInterval(interval);
+
+  }, []);
 
   return (
     <>
