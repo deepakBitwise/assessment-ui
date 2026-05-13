@@ -21,29 +21,34 @@ export function LearnerDashboard({
 }: LearnerDashboardProps) {
 
   const [submission, setSubmission] = useState<any>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string>(
+    content.liveEvaluationStatus.submissionId
+  );
 
   useEffect(() => {
+    if (!currentSubmissionId) {
+      return;
+    }
+
     async function loadSubmission() {
       try {
-        const data = await fetchSubmission("submission-1");
-        setSubmission(data);
+        const submissionId = currentSubmissionId;
+        if (!submissionId) return;
+        const data = await fetchSubmission(submissionId);
+        setSubmission(data ? { ...data, submission_id: submissionId } : null);
       } catch (error) {
         console.error("Failed to fetch submission", error);
       }
     }
 
-    // Initial fetch
     loadSubmission();
 
-    // Poll every 2 seconds
     const interval = setInterval(() => {
       loadSubmission();
     }, 2000);
 
-    // Cleanup
     return () => clearInterval(interval);
-
-  }, []);
+  }, [currentSubmissionId]);
 
   return (
     <>
@@ -68,6 +73,10 @@ export function LearnerDashboard({
           <SubmissionWorkspace
             assessment={content.activeAssessment}
             workspace={content.submissionWorkspace}
+            onSubmissionSubmitted={(submissionId) => {
+              setCurrentSubmissionId(submissionId);
+              // setSubmission({ submission_id: submissionId });
+            }}
           />
         </div>
       </section>

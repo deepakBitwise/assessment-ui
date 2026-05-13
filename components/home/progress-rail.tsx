@@ -78,6 +78,8 @@ export function ProgressRail({
   );
 
   const liveTierSummary = getLiveTierSummary(liveEvaluationStatus);
+  const displayedSubmissionId =
+    submission?.submission_id ?? liveEvaluationStatus.submissionId;
 
   function toggleLevel(levelId: string) {
     setExpandedLevels((current) =>
@@ -128,14 +130,14 @@ export function ProgressRail({
 
                 {isExpanded ? (
                   <div className="level-card__details">
-                    {level.state === "live" ? (
+                    {level.state === "live" && displayedSubmissionId ? ( // Remove this condition to always show live status when expanded
                       <div className="level-live-status">
                         <div className="level-live-status__header">
                           <strong>Live status</strong>
                         </div>
 
                         <p className="level-live-status__meta">
-                          Submission {liveEvaluationStatus.submissionId} |{" "}
+                          Submission {displayedSubmissionId} |{" "}
                           {liveEvaluationStatus.levelAttempt} |{" "}
                           {liveEvaluationStatus.submittedAgo}
                         </p>
