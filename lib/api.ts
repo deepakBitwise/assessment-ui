@@ -7,6 +7,142 @@ import type {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+export interface LoginResponse {
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+    expires_in: number;
+}
+
+export interface CurrentUserResponse {
+    id: string;
+    email: string;
+    full_name: string | null;
+    role: 'LEARNER' | 'REVIEWER' | 'ADMIN';
+    is_active: boolean;
+    is_superuser: boolean;
+    created_at: string | null;
+}
+
+export async function login(email: string, password: string): Promise<LoginResponse> {
+    try {
+        // Use FormData for proper form-urlencoded encoding
+        const formData = new FormData();
+        formData.append('username', email);
+        formData.append('password', password);
+
+        const response = await fetch(`${API_BASE_URL}/login/access-token`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `Login failed with status ${response.status}`;
+            
+            try {
+                if (contentType?.includes('application/json')) {
+                    const errorData = await response.json();
+                    console.log('Backend error response:', errorData);
+                    if (errorData.detail) {
+                        if (typeof errorData.detail === 'string') {
+                            errorMessage = errorData.detail;
+                        } else if (Array.isArray(errorData.detail)) {
+                            errorMessage = errorData.detail.map((e: any) => e.msg).join(', ');
+                        }
+                    }
+                } else {
+                    const text = await response.text();
+                    errorMessage = text || errorMessage;
+                }
+            } catch (e) {
+                console.error('Failed to parse error response:', e);
+            }
+            
+            console.log('Final error message:', errorMessage);
+            throw new Error(String(errorMessage));
+        }
+
+        const data: LoginResponse = await response.json();
+        return data;
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error('Error logging in:', error.message);
+            throw error;
+        }
+        const errorMessage = `Unknown error: ${String(error)}`;
+        console.error('Error logging in:', errorMessage);
+        throw new Error(errorMessage);
+    }
+}
+
+export async function getCurrentUser(accessToken: string): Promise<CurrentUserResponse> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/login/test-token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to get current user: ${response.statusText}`);
+        }
+
+        const data: CurrentUserResponse = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error getting current user:', error);
+        throw error;
+    }
+}
+
+export async function refreshAccessToken(refreshToken: string): Promise<LoginResponse> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/login/refresh`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to refresh session: ${response.statusText}`);
+        }
+
+        const data: LoginResponse = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        throw error;
+    }
+}
+
+export async function logout(accessToken: string): Promise<{ message: string }> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/logout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Logout failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error logging out:', error);
+        throw error;
+    }
+}
+
 export async function fetchAssessments(): Promise<AssessmentResponse> {
     try {
         const response = await fetch(`${API_BASE_URL}/assessments/`, {

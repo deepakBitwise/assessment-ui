@@ -1,4 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { logout } from "@/lib/api";
+import { clearAuthSession, getStoredAccessToken, getStoredUser } from "@/lib/auth";
+import type { CurrentUserResponse } from "@/lib/api";
 
 type AppNavProps = {
   current: "home" | "learner" | "reviewer" | "admin";
@@ -12,6 +19,29 @@ const navItems = [
 ] as const;
 
 export function AppNav({ current }: AppNavProps) {
+  const router = useRouter();
+  const [user, setUser] = useState<CurrentUserResponse | null>(null);
+
+  useEffect(() => {
+    setUser(getStoredUser());
+  }, []);
+
+  async function handleSignOut() {
+    const accessToken = getStoredAccessToken();
+
+    if (accessToken) {
+      try {
+        await logout(accessToken);
+      } catch {
+        // Local sign-out should still complete if the server session is gone.
+      }
+    }
+
+    clearAuthSession();
+    setUser(null);
+    router.push("/");
+  }
+
   return (
     <nav className="app-nav">
       <Link className="app-nav__brand" href="/">
@@ -28,6 +58,14 @@ export function AppNav({ current }: AppNavProps) {
             {item.label}
           </Link>
         ))}
+        {user ? (
+          <>
+            {/* <span className="app-nav__user">{user.full_name || user.email}</span> */}
+            <button className="app-nav__button" onClick={handleSignOut} type="button">
+              Sign out
+            </button>
+          </>
+        ) : null}
       </div>
     </nav>
   );
