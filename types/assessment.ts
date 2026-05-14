@@ -22,9 +22,11 @@ export type RubricItem = {
 };
 
 export type ActivityItem = {
+  id: string;
   title: string;
   meta: string;
   detail: string;
+  status?: string;
 };
 
 export type Metric = {
@@ -177,4 +179,16 @@ export type AssessmentResponse = {
 export type AssessmentUpdatePayload = {
   problem_statement: string;
   deliverables: string[];
+};
+
+export type SubmissionStatus = "PASSED" | "PENDING" | "REJECTED";
+
+export type Submission = {
+  assessment_id: string;
+  automated_check: SubmissionStatus;
+  llm_judge: SubmissionStatus;
+  human_reviewer: SubmissionStatus;
+  id: string;
+  created_at: string;
+  updated_at: string;
 };
