@@ -1,4 +1,9 @@
-import type { AssessmentResponse, AssessmentUpdatePayload, Assessment } from '@/types/assessment';
+import type {
+    Assessment,
+    AssessmentResponse,
+    AssessmentUpdatePayload,
+    Submission,
+} from '@/types/assessment';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
@@ -204,6 +209,27 @@ export async function fetchSubmission(submissionId: string): Promise<unknown> {
         return data;
     } catch (error) {
         console.error('Error fetching submission:', error);
+        throw error;
+    }
+}
+
+export async function fetchSubmissions(): Promise<Submission[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/submissions`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch submissions: ${response.statusText}`);
+        }
+
+        const data = (await response.json()) as Submission[];
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error fetching submissions:', error);
         throw error;
     }
 }
