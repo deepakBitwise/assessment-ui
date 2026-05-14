@@ -291,7 +291,7 @@ export function SubmissionWorkspace({
                         Download
                       </button>
                       <label className="button button--secondary upload-box__action" htmlFor={fileInputId}>
-                        Reupload
+                        Select File
                         <input
                           accept=".zip,application/zip"
                           className="upload-control__input"

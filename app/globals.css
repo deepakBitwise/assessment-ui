@@ -882,6 +882,13 @@ textarea {
   line-height: 1.6;
 }
 
+.timeline__head--with-status {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .evaluation-status {
   padding: 20px;
   border: 1px solid var(--line);
