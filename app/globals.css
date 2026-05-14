@@ -101,35 +101,6 @@ textarea {
   font-weight: 700;
 }
 
-.app-nav__user {
-  align-self: center;
-  max-width: 220px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.88rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.app-nav__button {
-  border: 1px solid rgba(21, 33, 32, 0.08);
-  border-radius: 999px;
-  padding: 10px 14px;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.78);
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.auth-check {
-  padding: 42px;
-}
-
-.auth-check h1 {
-  margin: 10px 0 0;
-  font-size: 2rem;
-}
-
 .route-hub {
   margin-bottom: 24px;
 }
