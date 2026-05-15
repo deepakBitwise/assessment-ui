@@ -18,6 +18,27 @@ function getStatusLabel(status?: string) {
   return "Under Review";
 }
 
+function getEventStatusClass(type: string) {
+  if (type === "SUCCESS") return "passed";
+  if (type === "FAILURE") return "failed";
+  if (type === "QUEUED") return "queued";
+  if (type === "GENERAL") return "general";
+  return "pending";
+}
+
+function formatEventTimestamp(timestamp: string) {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return timestamp;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
+}
+
 export function ActivityTimeline({
   activity,
   isLoading = false,
@@ -89,6 +110,25 @@ export function ActivityTimeline({
                     ) : null}
                   </div>
                   <p>{item.detail}</p>
+
+                  {item.events?.length ? (
+                    <div className="timeline-event-group">
+                      {item.events.map((event) => (
+                        <div
+                          className="timeline-event"
+                          key={event.id ?? `${item.id}-${event.type}-${event.timestamp}-${event.value}`}
+                        >
+                          <div className="timeline-event__head">
+                            <p>{event.value}</p>
+                            <span className={`status ${getEventStatusClass(event.type)}`}>
+                              {event.type}
+                            </span>
+                            <time>{formatEventTimestamp(event.timestamp)}</time>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </article>
             ))

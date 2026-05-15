@@ -8,9 +8,20 @@ import { HeroSection } from "@/components/home/hero-section";
 import { ProgressRail } from "@/components/home/progress-rail";
 import { SubmissionWorkspace } from "@/components/home/submission-workspace";
 
-import { fetchSubmission, fetchSubmissions } from "@/lib/api";
+import {
+  fetchSubmission,
+  fetchSubmissionEvents,
+  fetchSubmissions
+} from "@/lib/api";
 
-import type { ActivityItem, DashboardContent, Submission } from "@/types/assessment";
+import type {
+  ActivityItem,
+  DashboardContent,
+  Submission,
+  SubmissionDetail,
+  SubmissionEventHistory,
+  SubmissionEventLog
+} from "@/types/assessment";
 
 type LearnerDashboardProps = {
   content: DashboardContent;
@@ -68,7 +79,24 @@ function getOverallSubmissionStatus(submission: Submission) {
   return "PENDING";
 }
 
-function formatSubmissionActivity(submissions: Submission[]): ActivityItem[] {
+function normalizeSubmissionEvents(
+  history?: SubmissionEventHistory | null
+): SubmissionEventLog[] {
+  if (!history) {
+    return [];
+  }
+
+  return history.events.map((event, index) => ({
+    ...event,
+    timestamp: history.created_at,
+    id: `${history.submission_id}-${history.created_at}-${index}`
+  }));
+}
+
+function formatSubmissionActivity(
+  submissions: Submission[],
+  eventHistoryBySubmissionId: Record<string, SubmissionEventHistory | null>
+): ActivityItem[] {
   return [...submissions]
     .sort(
       (left, right) =>
@@ -76,6 +104,8 @@ function formatSubmissionActivity(submissions: Submission[]): ActivityItem[] {
     )
     .map((submission) => {
       const overallStatus = getOverallSubmissionStatus(submission);
+      const eventHistory = eventHistoryBySubmissionId[submission.id];
+      const events = normalizeSubmissionEvents(eventHistory);
 
       return {
         id: submission.id,
@@ -84,7 +114,8 @@ function formatSubmissionActivity(submissions: Submission[]): ActivityItem[] {
           new Date(submission.updated_at)
         )}`,
         detail: `Assessment ${submission.assessment_id} | Automated check: ${submission.automated_check} | LLM judge: ${submission.llm_judge} | Human reviewer: ${submission.human_reviewer}`,
-        status: overallStatus
+        status: overallStatus,
+        events
       };
     });
 }
@@ -93,7 +124,8 @@ export function LearnerDashboard({
   content
 }: LearnerDashboardProps) {
 
-  const [submission, setSubmission] = useState<any>(null);
+  const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
+  const [liveSubmissionEvents, setLiveSubmissionEvents] = useState<SubmissionEventLog[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>(content.activity);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState<string | null>(null);
@@ -103,6 +135,8 @@ export function LearnerDashboard({
 
   useEffect(() => {
     if (!currentSubmissionId) {
+      setSubmission(null);
+      setLiveSubmissionEvents([]);
       return;
     }
 
@@ -110,20 +144,35 @@ export function LearnerDashboard({
       try {
         const submissionId = currentSubmissionId;
         if (!submissionId) return;
-        const data = await fetchSubmission(submissionId);
-        setSubmission(data ? { ...data, submission_id: submissionId } : null);
+        const [submissionData, eventHistory] = await Promise.all([
+          fetchSubmission(submissionId),
+          fetchSubmissionEvents(submissionId)
+        ]);
+
+        setSubmission(
+          submissionData ? { ...submissionData, submission_id: submissionId } : null
+        );
+        setLiveSubmissionEvents(normalizeSubmissionEvents(eventHistory));
       } catch (error) {
         console.error("Failed to fetch submission", error);
+        if (isActive) {
+          setLiveSubmissionEvents([]);
+        }
       }
     }
 
-    loadSubmission();
+    let isActive = true;
+
+    void loadSubmission();
 
     const interval = setInterval(() => {
-      loadSubmission();
+      void loadSubmission();
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
   }, [currentSubmissionId]);
 
   useEffect(() => {
@@ -140,12 +189,27 @@ export function LearnerDashboard({
         }
 
         const submissions = await fetchSubmissions();
+        const eventHistoryEntries = await Promise.all(
+          submissions.map(async (submission) => {
+            try {
+              const history = await fetchSubmissionEvents(submission.id);
+              return [submission.id, history] as const;
+            } catch (error) {
+              console.error(
+                `Failed to fetch events for submission ${submission.id}`,
+                error
+              );
+              return [submission.id, null] as const;
+            }
+          })
+        );
+        const eventHistoryBySubmissionId = Object.fromEntries(eventHistoryEntries);
 
         if (!isActive) {
           return;
         }
 
-        setActivity(formatSubmissionActivity(submissions));
+        setActivity(formatSubmissionActivity(submissions, eventHistoryBySubmissionId));
       } catch (error) {
         if (!isActive) {
           return;
@@ -188,6 +252,7 @@ export function LearnerDashboard({
           liveEvaluationStatus={content.liveEvaluationStatus}
           rubric={content.rubric}
           submission={submission}
+          liveEvents={liveSubmissionEvents}
         />
 
         <div className="stack">

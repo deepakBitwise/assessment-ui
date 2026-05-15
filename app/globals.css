@@ -587,6 +587,51 @@ textarea {
   font-weight: 700;
 }
 
+.live-event-stream {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20, 50, 48, 0.1);
+}
+
+.live-event-stream__header,
+.live-event-card__head,
+.timeline-event__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-event-stream__header span,
+.live-event-card__head time,
+.timeline-event__head time {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.live-event-stream__list,
+.timeline-event-group {
+  display: grid;
+  gap: 10px;
+}
+
+.live-event-card,
+.timeline-event {
+  padding: 12px 14px;
+  border: 1px solid rgba(20, 50, 48, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.live-event-card p,
+.timeline-event p {
+  margin: 10px 0 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
 .level-score-preview {
   padding: 16px;
   border: 1px solid rgba(20, 50, 48, 0.08);
@@ -884,9 +929,13 @@ textarea {
 
 .timeline__head--with-status {
   display: flex;
-  align-items: start;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.timeline-event-group {
+  margin-top: 14px;
 }
 
 .evaluation-status {
@@ -1184,4 +1233,14 @@ textarea {
 .status.pending {
   background: #fff4d6;
   color: #b7791f;
+}
+
+.status.queued {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status.general {
+  background: #f3e2cf;
+  color: #8a4b12;
 }
