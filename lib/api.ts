@@ -11,6 +11,7 @@ export interface LoginResponse {
 
 export interface CurrentUserResponse {
     id: string;
+    username: string;
     email: string;
     full_name: string | null;
     role: 'LEARNER' | 'REVIEWER' | 'ADMIN';
@@ -19,11 +20,18 @@ export interface CurrentUserResponse {
     created_at: string | null;
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export interface SignupPayload {
+    full_name: string;
+    username: string;
+    email: string;
+    password: string;
+}
+
+export async function login(username: string, password: string): Promise<LoginResponse> {
     try {
         // Use FormData for proper form-urlencoded encoding
         const formData = new FormData();
-        formData.append('username', email);
+        formData.append('username', username.trim().toLowerCase());
         formData.append('password', password);
 
         const response = await fetch(`${API_BASE_URL}/login/access-token`, {
@@ -38,7 +46,6 @@ export async function login(email: string, password: string): Promise<LoginRespo
             try {
                 if (contentType?.includes('application/json')) {
                     const errorData = await response.json();
-                    console.log('Backend error response:', errorData);
                     if (errorData.detail) {
                         if (typeof errorData.detail === 'string') {
                             errorMessage = errorData.detail;
@@ -54,7 +61,6 @@ export async function login(email: string, password: string): Promise<LoginRespo
                 console.error('Failed to parse error response:', e);
             }
             
-            console.log('Final error message:', errorMessage);
             throw new Error(String(errorMessage));
         }
 
@@ -62,12 +68,44 @@ export async function login(email: string, password: string): Promise<LoginRespo
         return data;
     } catch (error) {
         if (error instanceof Error) {
-            console.error('Error logging in:', error.message);
             throw error;
         }
         const errorMessage = `Unknown error: ${String(error)}`;
-        console.error('Error logging in:', errorMessage);
         throw new Error(errorMessage);
+    }
+}
+
+export async function signup(payload: SignupPayload): Promise<CurrentUserResponse> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            let errorMessage = `Sign up failed with status ${response.status}`;
+
+            if (contentType?.includes('application/json')) {
+                const errorData = await response.json();
+                if (typeof errorData.detail === 'string') {
+                    errorMessage = errorData.detail;
+                } else if (Array.isArray(errorData.detail)) {
+                    errorMessage = errorData.detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join(', ');
+                }
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        return await response.json() as CurrentUserResponse;
+    } catch (error) {
+        console.error('Error signing up:', error);
+        throw error;
     }
 }
 

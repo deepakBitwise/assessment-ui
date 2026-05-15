@@ -13,7 +13,12 @@ export function ProfileCard({ profile }: ProfileCardProps) {
           <h2>{profile.name}</h2>
           <p className="profile-card__muted">{profile.role}</p>
         </div>
-        <span className="status-pill">{profile.status}</span>
+        <div className="profile-card__badges">
+          {profile.username ? (
+            <span className="username-pill">@{profile.username}</span>
+          ) : null}
+          <span className="status-pill">{profile.status}</span>
+        </div>
       </div>
 
       <div className="profile-card__metrics">

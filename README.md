@@ -18,9 +18,9 @@ or `http://localhost:8000/api/v1` by default.
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Learner | `learner@example.com` | `SecurePass123!` |
-| Reviewer | `reviewer@example.com` | `SecurePass123!` |
-| Admin | `admin.user@example.com` | `SecurePass123!` |
+| Learner | `learner@example.com` / username `learner` | `SecurePass123!` |
+| Reviewer | `reviewer@example.com` / username `reviewer` | `SecurePass123!` |
+| Admin | `admin.user@example.com` / username `admin.user` | `SecurePass123!` |
 
 After running backend migrations, seed these users with:
 

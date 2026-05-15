@@ -21,6 +21,23 @@ const navItems = [
 export function AppNav({ current }: AppNavProps) {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUserResponse | null>(null);
+  const visibleNavItems = user
+    ? navItems.filter((item) => {
+        if (item.id === "home") {
+          return true;
+        }
+
+        if (user.role === "LEARNER") {
+          return item.id === "learner";
+        }
+
+        if (user.role === "REVIEWER") {
+          return item.id === "reviewer";
+        }
+
+        return item.id === "admin";
+      })
+    : navItems;
 
   useEffect(() => {
     setUser(getStoredUser());
@@ -49,7 +66,7 @@ export function AppNav({ current }: AppNavProps) {
       </Link>
 
       <div className="app-nav__links">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <Link
             className={`app-nav__link${current === item.id ? " app-nav__link--active" : ""}`}
             href={item.href}

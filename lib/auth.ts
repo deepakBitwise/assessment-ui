@@ -12,18 +12,21 @@ export const ROLE_ROUTES: Record<UserRole, "/learner" | "/reviewer" | "/admin"> 
 
 export const DEMO_CREDENTIALS = [
   {
+    username: "learner",
     email: "learner@example.com",
     password: "SecurePass123!",
     role: "Learner",
     href: "/learner"
   },
   {
+    username: "reviewer",
     email: "reviewer@example.com",
     password: "SecurePass123!",
     role: "Reviewer",
     href: "/reviewer"
   },
   {
+    username: "admin.user",
     email: "admin.user@example.com",
     password: "SecurePass123!",
     role: "Administrator",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LearnerDashboard } from "@/components/home/learner-dashboard";
+import { getStoredUser } from "@/lib/auth";
 import type { DashboardContent } from "@/types/assessment";
 
 const API_BASE_URL =
@@ -45,10 +46,32 @@ function normalizeDeliverables(
   return null;
 }
 
+function withStoredLearnerProfile(content: DashboardContent): DashboardContent {
+  const user = getStoredUser();
+
+  if (!user) {
+    return content;
+  }
+
+  return {
+    ...content,
+    profile: {
+      ...content.profile,
+      name: user.full_name || user.username,
+      username: user.username,
+      role: user.role === "LEARNER" ? content.profile.role : user.role
+    }
+  };
+}
+
 export function LearnerDashboardShell({
   initialContent
 }: LearnerDashboardShellProps) {
   const [content, setContent] = useState(initialContent);
+
+  useEffect(() => {
+    setContent(withStoredLearnerProfile(initialContent));
+  }, [initialContent]);
 
   useEffect(() => {
     let isActive = true;
@@ -113,7 +136,7 @@ export function LearnerDashboardShell({
           return;
         }
 
-        setContent(initialContent);
+        setContent(withStoredLearnerProfile(initialContent));
       }
     }
 
