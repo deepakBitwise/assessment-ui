@@ -1185,3 +1185,14 @@ textarea {
   background: #fff4d6;
   color: #b7791f;
 }
+
+.reviewer-textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #d9d9d9;
+  padding: 1rem;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 140px;
+  margin-top: 12px;
+}
