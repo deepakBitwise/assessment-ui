@@ -1,5 +1,7 @@
 import type { ActivityItem } from "@/types/assessment";
 
+import { useEffect, useState } from "react";
+
 type ActivityTimelineProps = {
   activity: ActivityItem[];
   isLoading?: boolean;
@@ -44,6 +46,7 @@ export function ActivityTimeline({
   isLoading = false,
   errorMessage = null
 }: ActivityTimelineProps) {
+  const [showDetails, setShowDetails] = useState(true);
   return (
     <div className="panel activity-panel">
       <div className="panel__header">
@@ -79,7 +82,6 @@ export function ActivityTimeline({
             </div>
           </article>
         ) : null}
-
         {!isLoading && !errorMessage && activity.length === 0 ? (
           <article className="timeline__item">
             <div className="timeline__dot" />
@@ -95,43 +97,51 @@ export function ActivityTimeline({
 
         {!isLoading && !errorMessage
           ? activity.map((item) => (
-              <article className="timeline__item" key={item.id}>
-                <div className="timeline__dot" />
-                <div>
-                  <div className="timeline__head timeline__head--with-status">
-                    <div>
-                      <strong>{item.title}</strong>
-                      <span>{item.meta}</span>
-                    </div>
-                    {item.status ? (
-                      <span className={`status ${getStatusClass(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    ) : null}
+            <article className="timeline__item" key={item.id}>
+              <div className="timeline__dot" />
+              <div>
+                <div className="timeline__head timeline__head--with-status">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <span>{item.meta}</span>
                   </div>
-                  <p>{item.detail}</p>
-
-                  {item.events?.length ? (
-                    <div className="timeline-event-group">
-                      {item.events.map((event) => (
-                        <div
-                          className="timeline-event"
-                          key={event.id ?? `${item.id}-${event.type}-${event.timestamp}-${event.value}`}
-                        >
-                          <div className="timeline-event__head">
-                            <p>{event.value}</p>
-                            <span className={`status ${getEventStatusClass(event.type)}`}>
-                              {event.type}
-                            </span>
-                            <time>{formatEventTimestamp(event.timestamp)}</time>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  {item.status ? (
+                    <span className={`status ${getStatusClass(item.status)}`}>
+                      {getStatusLabel(item.status)}
+                    </span>
                   ) : null}
                 </div>
-              </article>
-            ))
+                <p>{item.detail}</p>
+                <div className="timeline-actions">
+                  <button
+                    className="button button--secondary timeline-actions__toggle"
+                    onClick={() => setShowDetails(!showDetails)}
+                    aria-expanded={showDetails}
+                  >
+                    {showDetails ? "Hide Details" : "Show Details"}
+                  </button>
+                </div>
+                {showDetails && item.events?.length ? (
+                  <div className="timeline-event-group">
+                    {item.events.map((event) => (
+                      <div
+                        className="timeline-event"
+                        key={event.id ?? `${item.id}-${event.type}-${event.timestamp}-${event.value}`}
+                      >
+                        <div className="timeline-event__head">
+                          <p>{event.value}</p>
+                          <span className={`status ${getEventStatusClass(event.type)}`}>
+                            {event.type}
+                          </span>
+                          <time>{formatEventTimestamp(event.timestamp)}</time>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ))
           : null}
       </div>
     </div>

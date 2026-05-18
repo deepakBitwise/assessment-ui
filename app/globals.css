@@ -604,11 +604,42 @@ textarea {
   gap: 12px;
 }
 
+.timeline-event__head {
+  align-items: flex-start;
+}
+
+.timeline-event__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .live-event-stream__header span,
 .live-event-card__head time,
 .timeline-event__head time {
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.timeline-event__toggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--teal);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.timeline-event__toggle:hover {
+  color: var(--coral);
+}
+
+.timeline-event__toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 .live-event-stream__list,
@@ -932,6 +963,23 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.timeline-actions {
+  margin-top: 16px;
+}
+
+.timeline-actions__toggle {
+  padding: 10px 16px;
+  background: rgba(15, 118, 110, 0.08);
+  border-color: rgba(15, 118, 110, 0.16);
+  color: var(--teal);
+  box-shadow: none;
+}
+
+.timeline-actions__toggle:hover {
+  background: rgba(15, 118, 110, 0.14);
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.08);
 }
 
 .timeline-event-group {
