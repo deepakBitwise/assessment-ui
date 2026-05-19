@@ -88,11 +88,18 @@ textarea {
   gap: 10px;
 }
 
-.app-nav__link {
+.app-nav__link,
+.app-nav__button {
   padding: 10px 14px;
+  border: 1px solid rgba(35, 48, 49, 0.12);
   border-radius: 999px;
+  background: transparent;
   color: var(--muted);
-  transition: background 180ms ease;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
 }
 
 .app-nav__link--active {
