@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import type {
-  LearnerProfileSnapshot,
-  ReviewerSubmission,
-  ReviewerWorkspace
-} from "@/types/assessment";
+import { useEffect, useState } from "react";
 
-type ReviewerDashboardProps = {
-  content: ReviewerWorkspace;
+type HumanReview = {
+  id: string;
+  submission_id: string;
+  reviewer_comments: string | null;
+  final_verdict: string;
+  evaluator_payload: any;
+  created_at: string;
+  updated_at: string;
+};
+
+type Submission = {
+  id: string;
+  assessment_id: string;
+  attachment_object_name: string | null;
+  human_reviewer: string;
 };
 
 function getStatusClassName(status: string) {
@@ -18,148 +26,521 @@ function getStatusClassName(status: string) {
     return "panel__badge";
   }
 
-  if (normalized.includes("flag")) {
+  if (
+    normalized.includes("fail") ||
+    normalized.includes("reject")
+  ) {
     return "panel__badge panel__badge--danger";
   }
 
   return "panel__badge panel__badge--warm";
 }
 
-function LearnerProfileDetail({
-  profile,
-  submission
-}: {
-  profile: LearnerProfileSnapshot;
-  submission: ReviewerSubmission;
-}) {
-  return (
-    <div className="panel reviewer-detail-panel">
-      <div className="panel__header">
-        <div>
-          <p className="eyebrow">Learner Profile</p>
-          <h2>{profile.name}</h2>
-        </div>
-        <span className={getStatusClassName(submission.status)}>{submission.status}</span>
-      </div>
+export function ReviewerDashboard() {
+  const [reviews, setReviews] = useState<
+    HumanReview[]
+  >([]);
 
-      <div className="reviewer-detail-grid">
-        <div className="detail-stat">
-          <span>Cohort</span>
-          <strong>{profile.cohort}</strong>
-        </div>
-        <div className="detail-stat">
-          <span>Current level</span>
-          <strong>{profile.currentLevel}</strong>
-        </div>
-        <div className="detail-stat">
-          <span>Readiness</span>
-          <strong>{profile.readiness}</strong>
-        </div>
-        <div className="detail-stat">
-          <span>Submission</span>
-          <strong>{profile.lastSubmission}</strong>
-        </div>
-      </div>
+  const [activeReview, setActiveReview] =
+    useState<HumanReview | null>(null);
 
-      <div className="reviewer-notes-grid">
-        <div className="brief-card brief-card--accent">
-          <p className="eyebrow">Strengths</p>
-          <ul>
-            {profile.strengths.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
+  const [activeSubmission, setActiveSubmission] =
+    useState<Submission | null>(null);
 
-        <div className="brief-card">
-          <p className="eyebrow">Attention Areas</p>
-          <ul>
-            {profile.attentionAreas.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
+  const [reviewerComments, setReviewerComments] =
+    useState("");
 
-      <div className="review-summary">
-        <strong>{submission.id}</strong>
-        <p>{submission.summary}</p>
-        <span>{submission.risk}</span>
-      </div>
-    </div>
-  );
-}
+  const [loading, setLoading] = useState(false);
 
-export function ReviewerDashboard({ content }: ReviewerDashboardProps) {
-  const [activeSubmissionId, setActiveSubmissionId] = useState(content.submissions[0]?.id);
-  const activeSubmission =
-    content.submissions.find((submission) => submission.id === activeSubmissionId) ??
-    content.submissions[0];
-  const activeProfile = activeSubmission
-    ? content.learnerProfiles[activeSubmission.id]
-    : undefined;
+  useEffect(() => {
+    fetchReviews();
+  }, []);
 
-  return (
-    <>
-      <section className="reviewer-hero">
-        <div className="hero__copy">
-          <p className="eyebrow">Reviewer Console</p>
-          <h1>{content.title}</h1>
-          <p className="hero__text">
-            Prioritize borderline submissions, inspect learner context, and keep the
-            sign-off flow traceable without losing momentum.
-          </p>
-          <div className="hero__actions">
-            <button className="button button--primary">Open Next Review</button>
-            <button className="button button--ghost">Reviewer Guidelines</button>
-          </div>
-        </div>
+  async function fetchReviews() {
+    try {
+      const response = await fetch(
+        "http://localhost:8000/api/v1/human-reviews/"
+      );
 
-        <div className="panel reviewer-summary-panel">
-          <p className="eyebrow">Queue Summary</p>
-          <h2>{content.queueSummary}</h2>
-          <p className="spotlight-panel__summary">
-            Sort by urgency, click into a learner, and make the final call with the
-            same calm, evidence-backed workflow every time.
-          </p>
-        </div>
-      </section>
+      const data = await response.json();
 
+      const reviewList = Array.isArray(data)
+        ? data
+        : data.data || [];
+
+      const pendingReviews = reviewList.filter(
+        (review: HumanReview) =>
+          review.final_verdict === "PENDING"
+      );
+
+      setReviews(pendingReviews);
+
+      if (pendingReviews.length > 0) {
+        handleReviewSelection(
+          pendingReviews[0]
+        );
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleReviewSelection(
+    review: HumanReview
+  ) {
+    setActiveReview(review);
+
+    setReviewerComments(
+      review.reviewer_comments || ""
+    );
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/v1/submissions/${review.submission_id}`
+      );
+
+      const submissionData =
+        await response.json();
+
+      setActiveSubmission(
+        submissionData
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function downloadSubmissionFile() {
+    if (
+      !activeSubmission?.attachment_object_name
+    ) {
+      alert("No uploaded file found");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/v1/files/download-url/${activeSubmission.attachment_object_name}`
+      );
+
+      const data = await response.json();
+
+      window.open(
+        data.download_url,
+        "_blank"
+      );
+    } catch (error) {
+      console.error(error);
+      alert("Failed to download file");
+    }
+  }
+
+  async function submitFinalReview(
+    verdict: "PASSED" | "REJECTED"
+  ) {
+    if (!activeReview) return;
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `http://localhost:8000/api/v1/human-reviews/${activeReview.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            reviewer_comments:
+              reviewerComments,
+            final_verdict: verdict,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Failed to submit review"
+        );
+      }
+
+      const updatedReviews =
+        reviews.filter(
+          (review) =>
+            review.id !==
+            activeReview.id
+        );
+
+      setReviews(updatedReviews);
+
+      if (updatedReviews.length > 0) {
+        handleReviewSelection(
+          updatedReviews[0]
+        );
+      } else {
+        setActiveReview(null);
+        setActiveSubmission(null);
+      }
+
+      setReviewerComments("");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to submit review");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!activeReview && reviews.length === 0) {
+    return (
       <section className="layout-grid layout-grid--bottom">
         <div className="panel reviewer-queue-panel">
           <div className="panel__header">
             <div>
-              <p className="eyebrow">Submission Queue</p>
-              <h2>Review-ready submissions</h2>
+              <p className="eyebrow">
+                Submission Queue
+              </p>
+
+              <h2>
+                No Pending Reviews
+              </h2>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const payload =
+    activeReview?.evaluator_payload;
+
+  return (
+    <>
+      {/* HERO */}
+      <section className="reviewer-hero">
+        <div className="hero__copy">
+          <p className="eyebrow">
+            Reviewer Console
+          </p>
+
+          <h1>
+            Human Review Workspace
+          </h1>
+
+          <p className="hero__text">
+            Review learner
+            submissions, inspect
+            uploaded files, and
+            provide final verdict.
+          </p>
+        </div>
+
+        <div className="panel reviewer-summary-panel">
+          <p className="eyebrow">
+            Queue Summary
+          </p>
+
+          <h2>
+            {reviews.length} Pending
+            Reviews
+          </h2>
+
+          <p className="spotlight-panel__summary">
+            Open any review from the
+            queue and provide final
+            reviewer judgement.
+          </p>
+        </div>
+      </section>
+
+      {/* MAIN */}
+      <section className="layout-grid layout-grid--bottom">
+        {/* LEFT PANEL */}
+        <div className="panel reviewer-queue-panel">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">
+                Submission Queue
+              </p>
+
+              <h2>
+                Pending Human Reviews
+              </h2>
             </div>
           </div>
 
           <div className="reviewer-queue">
-            {content.submissions.map((submission) => (
+            {reviews.map((review) => (
               <button
-                className={`queue-item${submission.id === activeSubmission?.id ? " queue-item--active" : ""}`}
-                key={submission.id}
-                onClick={() => setActiveSubmissionId(submission.id)}
+                key={review.id}
                 type="button"
+                className={`queue-item ${
+                  activeReview?.id ===
+                  review.id
+                    ? " queue-item--active"
+                    : ""
+                }`}
+                onClick={() =>
+                  handleReviewSelection(
+                    review
+                  )
+                }
               >
                 <div className="queue-item__head">
-                  <strong>{submission.learnerName}</strong>
-                  <span className={getStatusClassName(submission.status)}>{submission.status}</span>
+                  <strong>
+                    {review.id}
+                  </strong>
+
+                  <span
+                    className={getStatusClassName(
+                      review.final_verdict
+                    )}
+                  >
+                    {
+                      review.final_verdict
+                    }
+                  </span>
                 </div>
-                <p>{submission.level} · {submission.attempt}</p>
-                <p>{submission.score} · {submission.submittedAt}</p>
-                <span className="queue-item__link">Open learner profile</span>
+
+                <p>
+                  Submission:{" "}
+                  {
+                    review.submission_id
+                  }
+                </p>
+
+                <p>
+                  Score:{" "}
+                  {
+                    review
+                      .evaluator_payload
+                      ?.weighted_score
+                  }
+                </p>
+
+                <span className="queue-item__link">
+                  Open Review
+                </span>
               </button>
             ))}
           </div>
         </div>
 
-        {activeSubmission && activeProfile ? (
-          <LearnerProfileDetail
-            profile={activeProfile}
-            submission={activeSubmission}
-          />
-        ) : null}
+        {/* RIGHT PANEL */}
+        {activeReview && (
+          <div className="panel reviewer-detail-panel">
+            <div className="panel__header">
+              <div>
+                <p className="eyebrow">
+                  Human Review
+                </p>
+
+                <h2>
+                  {activeReview.id}
+                </h2>
+              </div>
+
+              <span
+                className={getStatusClassName(
+                  activeReview.final_verdict
+                )}
+              >
+                {
+                  activeReview.final_verdict
+                }
+              </span>
+            </div>
+
+            {/* DETAILS */}
+            <div className="reviewer-detail-grid">
+              <div className="detail-stat">
+                <span>
+                  Submission ID
+                </span>
+
+                <strong>
+                  {
+                    activeReview.submission_id
+                  }
+                </strong>
+              </div>
+
+              <div className="detail-stat">
+                <span>
+                  Assessment ID
+                </span>
+
+                <strong>
+                  {
+                    activeSubmission?.assessment_id
+                  }
+                </strong>
+              </div>
+
+              <div className="detail-stat">
+                <span>
+                  Weighted Score
+                </span>
+
+                <strong>
+                  {
+                    payload?.weighted_score
+                  }
+                </strong>
+              </div>
+
+              <div className="detail-stat">
+                <span>
+                  Provisional
+                  Verdict
+                </span>
+
+                <strong>
+                  {
+                    payload?.provisional_verdict
+                  }
+                </strong>
+              </div>
+            </div>
+
+            {/* DOWNLOAD */}
+            <div className="brief-card">
+              <p className="eyebrow">
+                Learner Submission
+              </p>
+
+              <button
+                className="button button--primary"
+                onClick={
+                  downloadSubmissionFile
+                }
+              >
+                Download Uploaded File
+              </button>
+            </div>
+
+            {/* REVIEW REASONS */}
+            <div className="brief-card brief-card--accent">
+              <p className="eyebrow">
+                Review Reasons
+              </p>
+
+              <ul>
+                {payload?.review_reasons?.map(
+                  (
+                    reason: string
+                  ) => (
+                    <li key={reason}>
+                      {reason}
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+
+            {/* OVERALL RATIONALE */}
+            <div className="brief-card">
+              <p className="eyebrow">
+                Overall Rationale
+              </p>
+
+              <p>
+                {
+                  payload?.overall_rationale
+                }
+              </p>
+            </div>
+
+            {/* DIMENSION SCORES */}
+            <div className="brief-card">
+              <p className="eyebrow">
+                Dimension Scores
+              </p>
+
+              <ul>
+                {Object.entries(
+                  payload?.score_breakdown ||
+                    {}
+                ).map(
+                  (
+                    [key, value]: any
+                  ) => (
+                    <li key={key}>
+                      <strong>
+                        {key}
+                      </strong>
+                      :{" "}
+                      {
+                        value.raw_score
+                      }
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+
+            {/* REVIEWER COMMENTS */}
+            <div className="brief-card">
+              <p className="eyebrow">
+                Reviewer Comments
+              </p>
+
+              <textarea
+                value={
+                  reviewerComments
+                }
+                onChange={(e) =>
+                  setReviewerComments(
+                    e.target.value
+                  )
+                }
+                placeholder="Enter final reviewer comments..."
+                rows={6}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius:
+                    "12px",
+                  marginTop: "12px",
+                }}
+              />
+            </div>
+
+            {/* ACTIONS */}
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                marginTop: "20px",
+              }}
+            >
+              <button
+                className="button button--primary"
+                disabled={loading}
+                onClick={() =>
+                  submitFinalReview(
+                    "PASSED"
+                  )
+                }
+              >
+                PASS
+              </button>
+
+              <button
+                className="button button--ghost"
+                disabled={loading}
+                onClick={() =>
+                  submitFinalReview(
+                    "REJECTED"
+                  )
+                }
+              >
+                FAIL
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </>
   );
