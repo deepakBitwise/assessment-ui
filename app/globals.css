@@ -101,35 +101,6 @@ textarea {
   font-weight: 700;
 }
 
-.app-nav__user {
-  align-self: center;
-  max-width: 220px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.88rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.app-nav__button {
-  border: 1px solid rgba(21, 33, 32, 0.08);
-  border-radius: 999px;
-  padding: 10px 14px;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.78);
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.auth-check {
-  padding: 42px;
-}
-
-.auth-check h1 {
-  margin: 10px 0 0;
-  font-size: 2rem;
-}
-
 .route-hub {
   margin-bottom: 24px;
 }
@@ -700,6 +671,82 @@ textarea {
   font-weight: 700;
 }
 
+.live-event-stream {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20, 50, 48, 0.1);
+}
+
+.live-event-stream__header,
+.live-event-card__head,
+.timeline-event__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timeline-event__head {
+  align-items: flex-start;
+}
+
+.timeline-event__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.live-event-stream__header span,
+.live-event-card__head time,
+.timeline-event__head time {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.timeline-event__toggle {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--teal);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.timeline-event__toggle:hover {
+  color: var(--coral);
+}
+
+.timeline-event__toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.live-event-stream__list,
+.timeline-event-group {
+  display: grid;
+  gap: 10px;
+}
+
+.live-event-card,
+.timeline-event {
+  padding: 12px 14px;
+  border: 1px solid rgba(20, 50, 48, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.live-event-card p,
+.timeline-event p {
+  margin: 10px 0 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
 .level-score-preview {
   padding: 16px;
   border: 1px solid rgba(20, 50, 48, 0.08);
@@ -993,6 +1040,34 @@ textarea {
 .timeline__item p {
   margin: 8px 0 0;
   line-height: 1.6;
+}
+
+.timeline__head--with-status {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timeline-actions {
+  margin-top: 16px;
+}
+
+.timeline-actions__toggle {
+  padding: 10px 16px;
+  background: rgba(15, 118, 110, 0.08);
+  border-color: rgba(15, 118, 110, 0.16);
+  color: var(--teal);
+  box-shadow: none;
+}
+
+.timeline-actions__toggle:hover {
+  background: rgba(15, 118, 110, 0.14);
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.08);
+}
+
+.timeline-event-group {
+  margin-top: 14px;
 }
 
 .evaluation-status {
@@ -1290,4 +1365,14 @@ textarea {
 .status.pending {
   background: #fff4d6;
   color: #b7791f;
+}
+
+.status.queued {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status.general {
+  background: #f3e2cf;
+  color: #8a4b12;
 }

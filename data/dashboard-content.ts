@@ -4,6 +4,7 @@ import type {
   ReviewerWorkspace,
   RouteCard
 } from "@/types/assessment";
+import { DEFAULT_SUBMISSION_ID } from "./constants";
 
 export const routeCards: RouteCard[] = [
   {
@@ -117,7 +118,7 @@ export const learnerDashboardContent: DashboardContent = {
     ]
   },
   liveEvaluationStatus: {
-    submissionId: "",//DEFAULT : "submission-1",
+    submissionId: DEFAULT_SUBMISSION_ID,
     levelAttempt: "L1 attempt 1",
     submittedAgo: "submitted 2 min ago",
     tiers: [
@@ -196,16 +197,19 @@ export const learnerDashboardContent: DashboardContent = {
   ],
   activity: [
     {
+      id: "activity-attempt-created",
       title: "Attempt created",
       meta: "Today, 09:10",
       detail: "Your Level 1 workspace is active and ready for submission packaging."
     },
     {
+      id: "activity-checks-configured",
       title: "Automated checks configured",
       meta: "Today, 09:12",
       detail: "Health probe, manifest validation, and rubric preview were provisioned."
     },
     {
+      id: "activity-mentor-checkpoint",
       title: "Mentor checkpoint",
       meta: "Tomorrow, 16:00",
       detail: "Optional design review before you freeze the first attempt."

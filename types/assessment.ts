@@ -22,9 +22,12 @@ export type RubricItem = {
 };
 
 export type ActivityItem = {
+  id: string;
   title: string;
   meta: string;
   detail: string;
+  status?: string;
+  events?: SubmissionEventLog[];
 };
 
 export type Metric = {
@@ -178,4 +181,45 @@ export type AssessmentResponse = {
 export type AssessmentUpdatePayload = {
   problem_statement: string;
   deliverables: string[];
+};
+
+export type SubmissionStatus = "PASSED" | "PENDING" | "REJECTED";
+
+export type SubmissionEventType =
+  | "SUCCESS"
+  | "FAILURE"
+  | "WARNING"
+  | "INFO"
+  | "QUEUED"
+  | "GENERAL";
+
+export type SubmissionEvent = {
+  type: SubmissionEventType;
+  value: string;
+};
+
+export type SubmissionEventLog = SubmissionEvent & {
+  id?: string;
+  timestamp: string;
+};
+
+export type SubmissionEventHistory = {
+  id: string;
+  submission_id: string;
+  created_at: string;
+  events: SubmissionEvent[];
+};
+
+export type Submission = {
+  assessment_id: string;
+  automated_check: SubmissionStatus;
+  llm_judge: SubmissionStatus;
+  human_reviewer: SubmissionStatus;
+  id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SubmissionDetail = Submission & {
+  submission_id?: string;
 };

@@ -3,10 +3,8 @@
 ```bash
 npm install
 npm run dev
-```
 
 Delete the local build cache:
-
 ```bash
 Remove-Item -Recurse -Force .next
 ```
@@ -27,3 +25,4 @@ After running backend migrations, seed these users with:
 ```bash
 python -m app.initial_data
 ```
+Remove-Item -Recurse -Force .next

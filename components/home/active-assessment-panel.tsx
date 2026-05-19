@@ -19,7 +19,7 @@ export function ActiveAssessmentPanel({
 
       <p className="spotlight-panel__summary">{assessment.summary}</p>
 
-      <div className="evidence-grid">
+      {/* <div className="evidence-grid">
         {assessment.evidenceCards.map((item) => (
           <div className="evidence-card" key={item.label}>
             <span>{item.label}</span>
@@ -27,7 +27,7 @@ export function ActiveAssessmentPanel({
             <p>{item.note}</p>
           </div>
         ))}
-      </div>
+      </div> */}
 
       <div className="brief-grid">
         <div className="brief-card brief-card--accent">
