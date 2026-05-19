@@ -156,15 +156,26 @@ textarea {
 }
 
 .login-form__actions {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 8px;
 }
 
-.login-form__actions p {
+.login-form__hint p {
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.signup-window {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .input-field {
@@ -181,6 +192,61 @@ textarea {
 .input-field:focus {
   border-color: rgba(15, 118, 110, 0.4);
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.08);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field__input {
+  padding-right: 86px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 220ms ease,
+    letter-spacing 220ms ease;
+}
+
+.password-field--revealed .password-field__input {
+  letter-spacing: 0.02em;
+  background:
+    linear-gradient(90deg, rgba(212, 239, 231, 0.58), rgba(241, 237, 231, 0.92));
+}
+
+.password-field__reveal {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  min-width: 62px;
+  border: 1px solid rgba(15, 118, 110, 0.24);
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: var(--teal);
+  background: rgba(255, 255, 255, 0.76);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 800;
+  transform: translateY(-50%) scale(1);
+  transition:
+    transform 180ms ease,
+    color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.password-field__reveal:hover,
+.password-field__reveal:focus-visible {
+  color: #f8fffd;
+  background: var(--teal);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.2);
+  outline: none;
+  transform: translateY(-50%) scale(1.04);
+}
+
+.password-field__reveal:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: translateY(-50%);
 }
 
 .login-routes {
@@ -374,6 +440,7 @@ textarea {
 }
 
 .status-pill,
+.username-pill,
 .panel__badge,
 .chip {
   display: inline-flex;
@@ -387,6 +454,23 @@ textarea {
 .status-pill {
   color: #102724;
   background: linear-gradient(135deg, #e7d29c, #f5edcb);
+}
+
+.profile-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.username-pill {
+  max-width: 180px;
+  overflow: hidden;
+  color: #d8fffa;
+  background: rgba(15, 118, 110, 0.5);
+  border: 1px solid rgba(216, 255, 250, 0.18);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-card__metrics {

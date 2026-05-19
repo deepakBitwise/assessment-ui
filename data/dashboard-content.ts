@@ -43,6 +43,7 @@ export const learnerDashboardContent: DashboardContent = {
   profile: {
     program: "Learner profile",
     name: "Shivam Rao",
+    username: "shivam.rao",
     role: "Forward Deployed Engineer - Ramp Cohort 06",
     status: "In Progress",
     metrics: [

@@ -270,6 +270,7 @@ export function LearnerDashboard({
               setSubmission(null);
               setLiveSubmissionEvents([]);
             }}
+            username={content.profile.username}
           />
         </div>
       </section>
