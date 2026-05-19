@@ -10,7 +10,7 @@ import type {
 import { DEFAULT_USER_ID } from "@/data/constants";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 type UploadUrlResponse = {
   upload_url?: string;
@@ -26,6 +26,7 @@ type SubmissionWorkspaceProps = {
   assessment: ActiveAssessment;
   workspace: SubmissionWorkspaceData;
   onSubmissionSubmitted: (submissionId: string) => void;
+  username: string;
 };
 
 function getFieldClassName(field: SubmissionField) {
@@ -62,7 +63,8 @@ function getUploadField(
 export function SubmissionWorkspace({
   assessment,
   workspace,
-  onSubmissionSubmitted
+  onSubmissionSubmitted,
+  username
 }: SubmissionWorkspaceProps) {
   const fileInputId = useId();
   const [selectedZip, setSelectedZip] = useState<File | null>(null);
@@ -204,7 +206,7 @@ export function SubmissionWorkspace({
         },
         body: JSON.stringify({
           assessment_id: assessment.id,
-          user_id : DEFAULT_USER_ID,
+          user_id: username || DEFAULT_USER_ID,
         })
       });
 

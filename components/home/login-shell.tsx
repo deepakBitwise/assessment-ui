@@ -89,7 +89,7 @@ export function LoginShell({ routes }: LoginShellProps) {
         <div className="login-benefits">
           <div className="detail-stat">
             <span>Auth method</span>
-            <strong>Username & Password</strong>
+            <strong>Email & Password</strong>
           </div>
           <div className="detail-stat">
             <span>Target behavior</span>
@@ -113,10 +113,10 @@ export function LoginShell({ routes }: LoginShellProps) {
 
         <form className="login-form" onSubmit={handleSubmit}>
           {error && (
-            <div className="error-message" style={{ 
-              color: '#dc2626', 
-              padding: '12px', 
-              backgroundColor: '#fee2e2', 
+            <div className="error-message" style={{
+              color: '#dc2626',
+              padding: '12px',
+              backgroundColor: '#fee2e2',
               borderRadius: '4px',
               marginBottom: '16px'
             }}>
@@ -125,13 +125,13 @@ export function LoginShell({ routes }: LoginShellProps) {
           )}
 
           <div className="form-card">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">{"Email or USERNAME"}</label>
             <input
               className="input-field"
               id="username"
               onChange={(event) => setUsername(event.target.value)}
               placeholder="learner"
-              type="text"
+              type="email"
               value={username}
               required
               disabled={loading}
@@ -171,8 +171,8 @@ export function LoginShell({ routes }: LoginShellProps) {
           </div>
 
           <div className="login-form__actions">
-            <button 
-              className="button button--primary" 
+            <button
+              className="button button--primary"
               type="submit"
               disabled={loading}
             >

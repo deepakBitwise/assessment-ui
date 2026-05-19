@@ -38,7 +38,7 @@ export type Metric = {
 export type Profile = {
   program: string;
   name: string;
-  username?: string;
+  username: string;
   role: string;
   status: string;
   metrics: Metric[];

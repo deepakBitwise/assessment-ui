@@ -6,7 +6,7 @@ import { getStoredUser } from "@/lib/auth";
 import type { DashboardContent } from "@/types/assessment";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1 ";
 
 type AssessmentResponse = {
   id?: string | null;
@@ -52,7 +52,7 @@ function withStoredLearnerProfile(content: DashboardContent): DashboardContent {
   if (!user) {
     return content;
   }
-
+  console.log("user", user);
   return {
     ...content,
     profile: {
