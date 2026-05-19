@@ -131,7 +131,7 @@ export function LoginShell({ routes }: LoginShellProps) {
               id="username"
               onChange={(event) => setUsername(event.target.value)}
               placeholder="learner"
-              type="email"
+              type="text"
               value={username}
               required
               disabled={loading}
