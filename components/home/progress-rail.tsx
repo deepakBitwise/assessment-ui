@@ -16,6 +16,7 @@ type ProgressRailProps = {
   rubric: RubricItem[];
   submission: SubmissionDetail | null;
   liveEvents: SubmissionEventLog[];
+  currentSubmissionId?: string | null;
 };
 
 const levelStateLabel: Record<LevelState, string> = {
@@ -80,14 +81,17 @@ export function ProgressRail({
   liveEvaluationStatus,
   rubric,
   submission,
-  liveEvents
+  liveEvents,
+  currentSubmissionId = null
 }: ProgressRailProps) {
   const [expandedLevels, setExpandedLevels] = useState<string[]>(() =>
     levels.filter((level) => level.state === "live").map((level) => level.id)
   );
 
   const displayedSubmissionId =
-    submission?.submission_id ?? liveEvaluationStatus.submissionId;
+    currentSubmissionId ??
+    submission?.submission_id ??
+    liveEvaluationStatus.submissionId;
 
   function toggleLevel(levelId: string) {
     setExpandedLevels((current) =>

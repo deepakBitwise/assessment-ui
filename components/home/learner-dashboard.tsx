@@ -156,6 +156,7 @@ export function LearnerDashboard({
       } catch (error) {
         console.error("Failed to fetch submission", error);
         if (isActive) {
+          setSubmission(null);
           setLiveSubmissionEvents([]);
         }
       }
@@ -253,6 +254,7 @@ export function LearnerDashboard({
           rubric={content.rubric}
           submission={submission}
           liveEvents={liveSubmissionEvents}
+          currentSubmissionId={currentSubmissionId}
         />
 
         <div className="stack">
@@ -265,7 +267,8 @@ export function LearnerDashboard({
             workspace={content.submissionWorkspace}
             onSubmissionSubmitted={(submissionId) => {
               setCurrentSubmissionId(submissionId);
-              // setSubmission({ submission_id: submissionId });
+              setSubmission(null);
+              setLiveSubmissionEvents([]);
             }}
           />
         </div>

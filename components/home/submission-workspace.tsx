@@ -7,6 +7,7 @@ import type {
   SubmissionField,
   SubmissionWorkspace as SubmissionWorkspaceData
 } from "@/types/assessment";
+import { DEFAULT_USER_ID } from "@/data/constants";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -202,7 +203,8 @@ export function SubmissionWorkspace({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          assessment_id: assessment.id
+          assessment_id: assessment.id,
+          user_id : DEFAULT_USER_ID,
         })
       });
 

@@ -4,6 +4,7 @@ import type {
   ReviewerWorkspace,
   RouteCard
 } from "@/types/assessment";
+import { DEFAULT_SUBMISSION_ID } from "./constants";
 
 export const routeCards: RouteCard[] = [
   {
@@ -117,7 +118,7 @@ export const learnerDashboardContent: DashboardContent = {
     ]
   },
   liveEvaluationStatus: {
-    submissionId: "submission-1",//DEFAULT : "submission-1",
+    submissionId: DEFAULT_SUBMISSION_ID,
     levelAttempt: "L1 attempt 1",
     submittedAgo: "submitted 2 min ago",
     tiers: [
