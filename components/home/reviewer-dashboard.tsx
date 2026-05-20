@@ -1,23 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  fetchHumanReviews,
+  fetchSubmission,
+  getPresignedDownloadUrl,
+  pushSubmissionEvent,
+  submitHumanReview,
+  updateSubmissionStatus,
+} from "@/lib/api";
+import type {
+  SubmissionEvent,
+  SubmissionDetail,
+  SubmissionStatus,
+} from "@/types/assessment";
+import type { HumanReview } from "@/lib/api";
 
-type HumanReview = {
-  id: string;
-  submission_id: string;
-  reviewer_comments: string | null;
-  final_verdict: string;
-  evaluator_payload: any;
-  created_at: string;
-  updated_at: string;
+type Submission = SubmissionDetail & {
+  attachment_object_name?: string | null;
+  automated_check?: SubmissionStatus;
+  llm_judge?: SubmissionStatus;
+  human_reviewer?: SubmissionStatus;
 };
 
-type Submission = {
-  id: string;
-  assessment_id: string;
-  attachment_object_name: string | null;
-  human_reviewer: string;
-};
+type ReviewFilter = "OPENED" | "CLOSED";
 
 function getStatusClassName(status: string) {
   const normalized = status.toLowerCase();
@@ -36,10 +42,36 @@ function getStatusClassName(status: string) {
   return "panel__badge panel__badge--warm";
 }
 
+function getReviewStateTag(
+  finalVerdict: string
+) {
+  return finalVerdict === "PENDING"
+    ? "OPENED"
+    : "CLOSED";
+}
+
+function buildReviewerEvent(
+  verdict: "PASSED" | "REJECTED",
+  reviewerComment: string
+): SubmissionEvent {
+  const trimmedComment =
+    reviewerComment.trim();
+
+  return {
+    type:
+      verdict === "PASSED"
+        ? "SUCCESS"
+        : "FAILURE",
+    value:`${verdict === "PASSED" ? "Submission passed" : "Submission rejected"} by human reviewer. Comments : ${trimmedComment}`
+  };
+}
+
 export function ReviewerDashboard() {
   const [reviews, setReviews] = useState<
     HumanReview[]
   >([]);
+  const [reviewFilter, setReviewFilter] =
+    useState<ReviewFilter>("OPENED");
 
   const [activeReview, setActiveReview] =
     useState<HumanReview | null>(null);
@@ -56,28 +88,58 @@ export function ReviewerDashboard() {
     fetchReviews();
   }, []);
 
+  useEffect(() => {
+    const reviewMatchesFilter =
+      activeReview &&
+      getReviewStateTag(
+        activeReview.final_verdict
+      ) === reviewFilter;
+
+    if (reviewMatchesFilter) {
+      return;
+    }
+
+    const nextReview = reviews.find(
+      (review) =>
+        getReviewStateTag(
+          review.final_verdict
+        ) === reviewFilter
+    );
+
+    if (nextReview) {
+      handleReviewSelection(
+        nextReview
+      );
+      return;
+    }
+
+    if (reviews.length === 0) {
+      setActiveReview(null);
+      setActiveSubmission(null);
+    }
+  }, [reviewFilter, reviews]);
+
   async function fetchReviews() {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/v1/human-reviews/"
-      );
+      const reviewList =
+        await fetchHumanReviews();
+      setReviews(reviewList);
 
-      const data = await response.json();
+      const openedReviews =
+        reviewList.filter(
+          (review) =>
+            getReviewStateTag(
+              review.final_verdict
+            ) === "OPENED"
+        );
 
-      const reviewList = Array.isArray(data)
-        ? data
-        : data.data || [];
-
-      const pendingReviews = reviewList.filter(
-        (review: HumanReview) =>
-          review.final_verdict === "PENDING"
-      );
-
-      setReviews(pendingReviews);
-
-      if (pendingReviews.length > 0) {
+      if (openedReviews.length > 0) {
         handleReviewSelection(
-          pendingReviews[0]
+          openedReviews[0]
+        );
+      } else if (reviewList.length > 0) {
+        handleReviewSelection(
+          reviewList[0]
         );
       }
     } catch (error) {
@@ -95,12 +157,10 @@ export function ReviewerDashboard() {
     );
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/submissions/${review.submission_id}`
-      );
-
       const submissionData =
-        await response.json();
+        await fetchSubmission(
+          review.submission_id
+        );
 
       setActiveSubmission(
         submissionData
@@ -119,14 +179,13 @@ export function ReviewerDashboard() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/files/download-url/${activeSubmission.attachment_object_name}`
-      );
-
-      const data = await response.json();
+      const downloadUrl =
+        await getPresignedDownloadUrl(
+          activeSubmission.attachment_object_name
+        );
 
       window.open(
-        data.download_url,
+        downloadUrl,
         "_blank"
       );
     } catch (error) {
@@ -143,47 +202,55 @@ export function ReviewerDashboard() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `http://localhost:8000/api/v1/human-reviews/${activeReview.id}`,
+      await submitHumanReview(
+        activeReview.id,
         {
-          method: "PATCH",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            reviewer_comments:
-              reviewerComments,
-            final_verdict: verdict,
-          }),
+          reviewer_comments:
+            reviewerComments,
+          final_verdict: verdict,
         }
       );
 
-      if (!response.ok) {
-        throw new Error(
-          "Failed to submit review"
+      await updateSubmissionStatus(
+        activeReview.submission_id,
+        {
+          automated_check:
+            "PASSED",
+          llm_judge: "PASSED",
+          human_reviewer:
+            verdict,
+        }
+      );
+
+      const reviewerEvent =
+        buildReviewerEvent(
+          verdict,
+          reviewerComments
         );
-      }
+
+      await pushSubmissionEvent(
+        activeReview.submission_id,
+        reviewerEvent
+      );
+
+      const updatedActiveReview = {
+        ...activeReview,
+        reviewer_comments:
+          reviewerComments,
+        final_verdict: verdict,
+      };
 
       const updatedReviews =
-        reviews.filter(
-          (review) =>
-            review.id !==
-            activeReview.id
+        reviews.map((review) =>
+          review.id === activeReview.id
+            ? updatedActiveReview
+            : review
         );
 
       setReviews(updatedReviews);
-
-      if (updatedReviews.length > 0) {
-        handleReviewSelection(
-          updatedReviews[0]
-        );
-      } else {
-        setActiveReview(null);
-        setActiveSubmission(null);
-      }
-
-      setReviewerComments("");
+      setActiveReview(
+        updatedActiveReview
+      );
     } catch (error) {
       console.error(error);
       alert("Failed to submit review");
@@ -203,7 +270,7 @@ export function ReviewerDashboard() {
               </p>
 
               <h2>
-                No Pending Reviews
+                No Reviews Found
               </h2>
             </div>
           </div>
@@ -211,6 +278,27 @@ export function ReviewerDashboard() {
       </section>
     );
   }
+
+  const openedCount = reviews.filter(
+    (review) =>
+      getReviewStateTag(
+        review.final_verdict
+      ) === "OPENED"
+  ).length;
+
+  const closedCount = reviews.filter(
+    (review) =>
+      getReviewStateTag(
+        review.final_verdict
+      ) === "CLOSED"
+  ).length;
+
+  const filteredReviews = reviews.filter(
+    (review) =>
+      getReviewStateTag(
+        review.final_verdict
+      ) === reviewFilter
+  );
 
   const payload =
     activeReview?.evaluator_payload;
@@ -242,14 +330,14 @@ export function ReviewerDashboard() {
           </p>
 
           <h2>
-            {reviews.length} Pending
+            {reviews.length} Total
             Reviews
           </h2>
 
           <p className="spotlight-panel__summary">
-            Open any review from the
-            queue and provide final
-            reviewer judgement.
+            Total: {reviews.length} |
+            Opened: {openedCount} |
+            Closed: {closedCount}
           </p>
         </div>
       </section>
@@ -265,22 +353,62 @@ export function ReviewerDashboard() {
               </p>
 
               <h2>
-                Pending Human Reviews
+                Human Reviews
               </h2>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+              }}
+            >
+              <button
+                type="button"
+                className={
+                  reviewFilter ===
+                  "OPENED"
+                    ? "button button--primary"
+                    : "button button--ghost"
+                }
+                onClick={() =>
+                  setReviewFilter(
+                    "OPENED"
+                  )
+                }
+              >
+                Opened
+              </button>
+
+              <button
+                type="button"
+                className={
+                  reviewFilter ===
+                  "CLOSED"
+                    ? "button button--primary"
+                    : "button button--ghost"
+                }
+                onClick={() =>
+                  setReviewFilter(
+                    "CLOSED"
+                  )
+                }
+              >
+                Closed
+              </button>
             </div>
           </div>
 
           <div className="reviewer-queue">
-            {reviews.map((review) => (
+            {filteredReviews.map((review) => (
               <button
                 key={review.id}
                 type="button"
-                className={`queue-item ${
-                  activeReview?.id ===
-                  review.id
+                className={`queue-item ${activeReview?.id ===
+                    review.id
                     ? " queue-item--active"
                     : ""
-                }`}
+                  }`}
                 onClick={() =>
                   handleReviewSelection(
                     review
@@ -292,15 +420,32 @@ export function ReviewerDashboard() {
                     {review.id}
                   </strong>
 
-                  <span
-                    className={getStatusClassName(
-                      review.final_verdict
-                    )}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      alignItems:
+                        "center",
+                    }}
                   >
-                    {
-                      review.final_verdict
-                    }
-                  </span>
+                    <span
+                      className="panel__badge panel__badge--warm"
+                    >
+                      {getReviewStateTag(
+                        review.final_verdict
+                      )}
+                    </span>
+
+                    <span
+                      className={getStatusClassName(
+                        review.final_verdict
+                      )}
+                    >
+                      {
+                        review.final_verdict
+                      }
+                    </span>
+                  </div>
                 </div>
 
                 <p>
@@ -320,10 +465,22 @@ export function ReviewerDashboard() {
                 </p>
 
                 <span className="queue-item__link">
-                  Open Review
+                  View Review
                 </span>
               </button>
             ))}
+
+            {filteredReviews.length === 0 ? (
+              <div className="brief-card">
+                <p className="eyebrow">
+                  No Reviews
+                </p>
+
+                <p>
+                  No {reviewFilter.toLowerCase()} reviews are available in this queue.
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -342,13 +499,11 @@ export function ReviewerDashboard() {
               </div>
 
               <span
-                className={getStatusClassName(
+                className="panel__badge panel__badge--warm"
+              >
+                {getReviewStateTag(
                   activeReview.final_verdict
                 )}
-              >
-                {
-                  activeReview.final_verdict
-                }
               </span>
             </div>
 
@@ -461,7 +616,7 @@ export function ReviewerDashboard() {
               <ul>
                 {Object.entries(
                   payload?.score_breakdown ||
-                    {}
+                  {}
                 ).map(
                   (
                     [key, value]: any
