@@ -23,6 +23,8 @@ type Submission = SubmissionDetail & {
   human_reviewer?: SubmissionStatus;
 };
 
+type ReviewFilter = "OPENED" | "CLOSED";
+
 function getStatusClassName(status: string) {
   const normalized = status.toLowerCase();
 
@@ -38,6 +40,14 @@ function getStatusClassName(status: string) {
   }
 
   return "panel__badge panel__badge--warm";
+}
+
+function getReviewStateTag(
+  finalVerdict: string
+) {
+  return finalVerdict === "PENDING"
+    ? "OPENED"
+    : "CLOSED";
 }
 
 function buildReviewerEvent(
@@ -60,6 +70,8 @@ export function ReviewerDashboard() {
   const [reviews, setReviews] = useState<
     HumanReview[]
   >([]);
+  const [reviewFilter, setReviewFilter] =
+    useState<ReviewFilter>("OPENED");
 
   const [activeReview, setActiveReview] =
     useState<HumanReview | null>(null);
@@ -76,20 +88,58 @@ export function ReviewerDashboard() {
     fetchReviews();
   }, []);
 
+  useEffect(() => {
+    const reviewMatchesFilter =
+      activeReview &&
+      getReviewStateTag(
+        activeReview.final_verdict
+      ) === reviewFilter;
+
+    if (reviewMatchesFilter) {
+      return;
+    }
+
+    const nextReview = reviews.find(
+      (review) =>
+        getReviewStateTag(
+          review.final_verdict
+        ) === reviewFilter
+    );
+
+    if (nextReview) {
+      handleReviewSelection(
+        nextReview
+      );
+      return;
+    }
+
+    if (reviews.length === 0) {
+      setActiveReview(null);
+      setActiveSubmission(null);
+    }
+  }, [reviewFilter, reviews]);
+
   async function fetchReviews() {
     try {
       const reviewList =
         await fetchHumanReviews();
-      const pendingReviews = reviewList.filter(
-        (review: HumanReview) =>
-          review.final_verdict === "PENDING"
-      );
+      setReviews(reviewList);
 
-      setReviews(pendingReviews);
+      const openedReviews =
+        reviewList.filter(
+          (review) =>
+            getReviewStateTag(
+              review.final_verdict
+            ) === "OPENED"
+        );
 
-      if (pendingReviews.length > 0) {
+      if (openedReviews.length > 0) {
         handleReviewSelection(
-          pendingReviews[0]
+          openedReviews[0]
+        );
+      } else if (reviewList.length > 0) {
+        handleReviewSelection(
+          reviewList[0]
         );
       }
     } catch (error) {
@@ -183,25 +233,24 @@ export function ReviewerDashboard() {
         reviewerEvent
       );
 
+      const updatedActiveReview = {
+        ...activeReview,
+        reviewer_comments:
+          reviewerComments,
+        final_verdict: verdict,
+      };
+
       const updatedReviews =
-        reviews.filter(
-          (review) =>
-            review.id !==
-            activeReview.id
+        reviews.map((review) =>
+          review.id === activeReview.id
+            ? updatedActiveReview
+            : review
         );
 
       setReviews(updatedReviews);
-
-      if (updatedReviews.length > 0) {
-        handleReviewSelection(
-          updatedReviews[0]
-        );
-      } else {
-        setActiveReview(null);
-        setActiveSubmission(null);
-      }
-
-      setReviewerComments("");
+      setActiveReview(
+        updatedActiveReview
+      );
     } catch (error) {
       console.error(error);
       alert("Failed to submit review");
@@ -221,7 +270,7 @@ export function ReviewerDashboard() {
               </p>
 
               <h2>
-                No Pending Reviews
+                No Reviews Found
               </h2>
             </div>
           </div>
@@ -229,6 +278,27 @@ export function ReviewerDashboard() {
       </section>
     );
   }
+
+  const openedCount = reviews.filter(
+    (review) =>
+      getReviewStateTag(
+        review.final_verdict
+      ) === "OPENED"
+  ).length;
+
+  const closedCount = reviews.filter(
+    (review) =>
+      getReviewStateTag(
+        review.final_verdict
+      ) === "CLOSED"
+  ).length;
+
+  const filteredReviews = reviews.filter(
+    (review) =>
+      getReviewStateTag(
+        review.final_verdict
+      ) === reviewFilter
+  );
 
   const payload =
     activeReview?.evaluator_payload;
@@ -260,14 +330,14 @@ export function ReviewerDashboard() {
           </p>
 
           <h2>
-            {reviews.length} Pending
+            {reviews.length} Total
             Reviews
           </h2>
 
           <p className="spotlight-panel__summary">
-            Open any review from the
-            queue and provide final
-            reviewer judgement.
+            Total: {reviews.length} |
+            Opened: {openedCount} |
+            Closed: {closedCount}
           </p>
         </div>
       </section>
@@ -283,13 +353,54 @@ export function ReviewerDashboard() {
               </p>
 
               <h2>
-                Pending Human Reviews
+                Human Reviews
               </h2>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+              }}
+            >
+              <button
+                type="button"
+                className={
+                  reviewFilter ===
+                  "OPENED"
+                    ? "button button--primary"
+                    : "button button--ghost"
+                }
+                onClick={() =>
+                  setReviewFilter(
+                    "OPENED"
+                  )
+                }
+              >
+                Opened
+              </button>
+
+              <button
+                type="button"
+                className={
+                  reviewFilter ===
+                  "CLOSED"
+                    ? "button button--primary"
+                    : "button button--ghost"
+                }
+                onClick={() =>
+                  setReviewFilter(
+                    "CLOSED"
+                  )
+                }
+              >
+                Closed
+              </button>
             </div>
           </div>
 
           <div className="reviewer-queue">
-            {reviews.map((review) => (
+            {filteredReviews.map((review) => (
               <button
                 key={review.id}
                 type="button"
@@ -309,15 +420,32 @@ export function ReviewerDashboard() {
                     {review.id}
                   </strong>
 
-                  <span
-                    className={getStatusClassName(
-                      review.final_verdict
-                    )}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      alignItems:
+                        "center",
+                    }}
                   >
-                    {
-                      review.final_verdict
-                    }
-                  </span>
+                    <span
+                      className="panel__badge panel__badge--warm"
+                    >
+                      {getReviewStateTag(
+                        review.final_verdict
+                      )}
+                    </span>
+
+                    <span
+                      className={getStatusClassName(
+                        review.final_verdict
+                      )}
+                    >
+                      {
+                        review.final_verdict
+                      }
+                    </span>
+                  </div>
                 </div>
 
                 <p>
@@ -337,10 +465,22 @@ export function ReviewerDashboard() {
                 </p>
 
                 <span className="queue-item__link">
-                  Open Review
+                  View Review
                 </span>
               </button>
             ))}
+
+            {filteredReviews.length === 0 ? (
+              <div className="brief-card">
+                <p className="eyebrow">
+                  No Reviews
+                </p>
+
+                <p>
+                  No {reviewFilter.toLowerCase()} reviews are available in this queue.
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -359,13 +499,11 @@ export function ReviewerDashboard() {
               </div>
 
               <span
-                className={getStatusClassName(
+                className="panel__badge panel__badge--warm"
+              >
+                {getReviewStateTag(
                   activeReview.final_verdict
                 )}
-              >
-                {
-                  activeReview.final_verdict
-                }
               </span>
             </div>
 
