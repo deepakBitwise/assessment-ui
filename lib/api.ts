@@ -5,6 +5,8 @@ import type {
     SubmissionDetail,
     SubmissionEventHistory,
     Submission,
+    SubmissionEvent,
+    SubmissionStatus,
 } from '@/types/assessment';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -301,6 +303,124 @@ export async function fetchSubmissions(): Promise<Submission[]> {
         console.error('Error fetching submissions:', error);
         throw error;
     }
+}
+
+export type HumanReviewVerdict = 'PASSED' | 'REJECTED';
+
+export type HumanReview = {
+    id: string;
+    submission_id: string;
+    reviewer_comments: string | null;
+    final_verdict: string;
+    evaluator_payload: any;
+    created_at: string;
+    updated_at: string;
+};
+
+export type SubmitHumanReviewPayload = {
+    reviewer_comments: string;
+    final_verdict: HumanReviewVerdict;
+};
+
+export type SubmissionStatusUpdatePayload = {
+    automated_check: SubmissionStatus;
+    llm_judge: SubmissionStatus;
+    human_reviewer: SubmissionStatus;
+};
+
+export async function submitHumanReview(
+    reviewId: string,
+    payload: SubmitHumanReviewPayload
+): Promise<void> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/human-reviews/${reviewId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to submit review: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error submitting human review:', error);
+        throw error;
+    }
+}
+
+export async function fetchHumanReviews(): Promise<HumanReview[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/human-reviews/`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch human reviews: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const reviewList = Array.isArray(data) ? data : data.data || [];
+        return Array.isArray(reviewList) ? reviewList : [];
+    } catch (error) {
+        console.error('Error fetching human reviews:', error);
+        throw error;
+    }
+}
+
+export async function updateSubmissionStatus(
+    submissionId: string,
+    payload: SubmissionStatusUpdatePayload
+): Promise<void> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/submissions/${submissionId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update submission status: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error updating submission status:', error);
+        throw error;
+    }
+}
+
+export async function pushSubmissionEvent(
+    submissionId: string,
+    event: SubmissionEvent
+): Promise<void> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/submission/${submissionId}/events`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(event),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to push submission event: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error pushing submission event:', error);
+        throw error;
+    }
+}
+
+export async function pushSubmissionEvents(
+    submissionId: string,
+    events: SubmissionEvent[]
+): Promise<void> {
+    await Promise.all(events.map((event) => pushSubmissionEvent(submissionId, event)));
 }
 
 type DownloadUrlResponse = {

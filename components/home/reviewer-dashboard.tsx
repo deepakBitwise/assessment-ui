@@ -1,22 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  fetchHumanReviews,
+  fetchSubmission,
+  getPresignedDownloadUrl,
+  pushSubmissionEvent,
+  submitHumanReview,
+  updateSubmissionStatus,
+} from "@/lib/api";
+import type {
+  SubmissionEvent,
+  SubmissionDetail,
+  SubmissionStatus,
+} from "@/types/assessment";
+import type { HumanReview } from "@/lib/api";
 
-type HumanReview = {
-  id: string;
-  submission_id: string;
-  reviewer_comments: string | null;
-  final_verdict: string;
-  evaluator_payload: any;
-  created_at: string;
-  updated_at: string;
-};
-
-type Submission = {
-  id: string;
-  assessment_id: string;
-  attachment_object_name: string | null;
-  human_reviewer: string;
+type Submission = SubmissionDetail & {
+  attachment_object_name?: string | null;
+  automated_check?: SubmissionStatus;
+  llm_judge?: SubmissionStatus;
+  human_reviewer?: SubmissionStatus;
 };
 
 function getStatusClassName(status: string) {
@@ -34,6 +38,22 @@ function getStatusClassName(status: string) {
   }
 
   return "panel__badge panel__badge--warm";
+}
+
+function buildReviewerEvent(
+  verdict: "PASSED" | "REJECTED",
+  reviewerComment: string
+): SubmissionEvent {
+  const trimmedComment =
+    reviewerComment.trim();
+
+  return {
+    type:
+      verdict === "PASSED"
+        ? "SUCCESS"
+        : "FAILURE",
+    value:`${verdict === "PASSED" ? "Submission passed" : "Submission rejected"} by human reviewer. Comments : ${trimmedComment}`
+  };
 }
 
 export function ReviewerDashboard() {
@@ -58,16 +78,8 @@ export function ReviewerDashboard() {
 
   async function fetchReviews() {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/v1/human-reviews/"
-      );
-
-      const data = await response.json();
-
-      const reviewList = Array.isArray(data)
-        ? data
-        : data.data || [];
-
+      const reviewList =
+        await fetchHumanReviews();
       const pendingReviews = reviewList.filter(
         (review: HumanReview) =>
           review.final_verdict === "PENDING"
@@ -95,12 +107,10 @@ export function ReviewerDashboard() {
     );
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/submissions/${review.submission_id}`
-      );
-
       const submissionData =
-        await response.json();
+        await fetchSubmission(
+          review.submission_id
+        );
 
       setActiveSubmission(
         submissionData
@@ -119,14 +129,13 @@ export function ReviewerDashboard() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/files/download-url/${activeSubmission.attachment_object_name}`
-      );
-
-      const data = await response.json();
+      const downloadUrl =
+        await getPresignedDownloadUrl(
+          activeSubmission.attachment_object_name
+        );
 
       window.open(
-        data.download_url,
+        downloadUrl,
         "_blank"
       );
     } catch (error) {
@@ -143,27 +152,36 @@ export function ReviewerDashboard() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        `http://localhost:8000/api/v1/human-reviews/${activeReview.id}`,
+      await submitHumanReview(
+        activeReview.id,
         {
-          method: "PATCH",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            reviewer_comments:
-              reviewerComments,
-            final_verdict: verdict,
-          }),
+          reviewer_comments:
+            reviewerComments,
+          final_verdict: verdict,
         }
       );
 
-      if (!response.ok) {
-        throw new Error(
-          "Failed to submit review"
+      await updateSubmissionStatus(
+        activeReview.submission_id,
+        {
+          automated_check:
+            "PASSED",
+          llm_judge: "PASSED",
+          human_reviewer:
+            verdict,
+        }
+      );
+
+      const reviewerEvent =
+        buildReviewerEvent(
+          verdict,
+          reviewerComments
         );
-      }
+
+      await pushSubmissionEvent(
+        activeReview.submission_id,
+        reviewerEvent
+      );
 
       const updatedReviews =
         reviews.filter(
@@ -275,12 +293,11 @@ export function ReviewerDashboard() {
               <button
                 key={review.id}
                 type="button"
-                className={`queue-item ${
-                  activeReview?.id ===
-                  review.id
+                className={`queue-item ${activeReview?.id ===
+                    review.id
                     ? " queue-item--active"
                     : ""
-                }`}
+                  }`}
                 onClick={() =>
                   handleReviewSelection(
                     review
@@ -461,7 +478,7 @@ export function ReviewerDashboard() {
               <ul>
                 {Object.entries(
                   payload?.score_breakdown ||
-                    {}
+                  {}
                 ).map(
                   (
                     [key, value]: any
