@@ -149,9 +149,9 @@ export function ProgressRail({
                         </div>
 
                         <p className="level-live-status__meta">
-                          Submission {displayedSubmissionId} |{" "}
-                          {liveEvaluationStatus.levelAttempt} |{" "}
-                          {liveEvaluationStatus.submittedAgo}
+                          Submission ID: {displayedSubmissionId} {" "}
+                          {/* {liveEvaluationStatus.levelAttempt} |{" "}
+                          {liveEvaluationStatus.submittedAgo} */}
                         </p>
 
                         <div className="tier-status-list">
