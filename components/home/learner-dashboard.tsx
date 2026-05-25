@@ -123,7 +123,6 @@ function formatSubmissionActivity(
 export function LearnerDashboard({
   content
 }: LearnerDashboardProps) {
-
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [liveSubmissionEvents, setLiveSubmissionEvents] = useState<SubmissionEventLog[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>(content.activity);
@@ -132,6 +131,10 @@ export function LearnerDashboard({
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string>(
     content.liveEvaluationStatus.submissionId
   );
+
+  useEffect(() => {
+    setCurrentSubmissionId(content.liveEvaluationStatus.submissionId);
+  }, [content.liveEvaluationStatus.submissionId]);
 
   useEffect(() => {
     if (!currentSubmissionId) {
@@ -144,10 +147,22 @@ export function LearnerDashboard({
       try {
         const submissionId = currentSubmissionId;
         if (!submissionId) return;
-        const [submissionData, eventHistory] = await Promise.all([
-          fetchSubmission(submissionId),
-          fetchSubmissionEvents(submissionId)
-        ]);
+        const submissionData = await fetchSubmission(submissionId);
+
+        let eventHistory: SubmissionEventHistory | null = null;
+
+        try {
+          eventHistory = await fetchSubmissionEvents(submissionId);
+        } catch (eventError) {
+          console.error(
+            `Failed to fetch submission events for ${submissionId}`,
+            eventError
+          );
+        }
+
+        if (!isActive || submissionId !== currentSubmissionId) {
+          return;
+        }
 
         setSubmission(
           submissionData ? { ...submissionData, submission_id: submissionId } : null
