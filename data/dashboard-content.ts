@@ -1,6 +1,7 @@
 import type {
   AdminPlaceholder,
   DashboardContent,
+  ProblemStatementData,
   ReviewerWorkspace,
   RouteCard
 } from "@/types/assessment";
@@ -31,13 +32,170 @@ export const workspaceRouteCards: Array<
   Omit<RouteCard, "href"> & { href: "/learner" | "/reviewer" | "/admin" }
 >;
 
+const workflowWeaverProblemStatement: ProblemStatementData = {
+  id: "FDE-CAPSTONE-001",
+  title: "WorkflowWeaver",
+  subtitle:
+    "Build a workflow automation platform where users describe business processes in natural language, and an AI agent executes them across connected business tools — autonomously.",
+  tags: ["Expert", "Agentic AI", "MCP Orchestration", "LangGraph", "Enterprise Automation"],
+  difficulty: "★★★★★",
+  effort: "30 – 40 hrs",
+  overview:
+    "Business users today operate across multiple disconnected platforms — task trackers, documentation tools, communication channels, and project management systems. Every cross-platform workflow requires manual, repetitive effort that slows teams down and introduces human error.",
+  mission:
+    'Design and build WorkflowWeaver — a platform where a business user can describe a workflow in plain English (e.g., "Take today\'s meeting notes and create a Notion project page, raise GitHub issues for each action item, and post a summary to Microsoft Teams"), and an AI agent executes the entire multi-tool sequence — autonomously, reliably, and with observable progress.',
+  features: [
+    {
+      icon: "💬",
+      title: "Natural Language Workflow Creation",
+      description:
+        "Accept plain English workflow descriptions and parse them into structured multi-step action plans using LLM."
+    },
+    {
+      icon: "🤖",
+      title: "Multi-Tool Agent Execution",
+      description:
+        "Execute actions across Notion, GitHub, Google Drive, and Microsoft Teams in a single workflow run, orchestrated by LangGraph."
+    },
+    {
+      icon: "💡",
+      title: "Real-Time Execution Logs",
+      description:
+        "Stream live step-by-step execution logs to the frontend via Server-Sent Events as the agent runs."
+    },
+    {
+      icon: "📋",
+      title: "Workflow Templates",
+      description:
+        "Provide at least 3 pre-built workflow templates users can select and customize (e.g., Meeting-to-Tasks, Sprint Planning, Incident Response)."
+    },
+    {
+      icon: "🔄",
+      title: "Failure Recovery & Retry",
+      description:
+        "Detect failed steps and automatically retry with exponential backoff. Log failure reasons clearly in the execution report."
+    },
+    {
+      icon: "↩️",
+      title: "Action Rollback",
+      description:
+        "On critical failure, attempt to reverse previously executed actions and restore prior state where possible."
+    }
+  ],
+  architectureSteps: [
+    {
+      step: 1,
+      title: "User Interface — React + Tailwind",
+      description:
+        "A web UI where users type a workflow description in natural language. The UI displays real-time execution logs via Server-Sent Events (SSE), shows a workflow template library, and renders execution reports. All status updates stream from the backend without page reload."
+    },
+    {
+      step: 2,
+      title: "Backend API — FastAPI / Node.js",
+      description:
+        "Receives workflow requests from the frontend, triggers the LangGraph agent, and streams execution events back via SSE. Manages session state, workflow history, and exposes endpoints for templates and reports."
+    },
+    {
+      step: 3,
+      title: "AI Orchestration Layer — LangGraph + LLM API",
+      description:
+        "The core agent graph built with LangGraph. Nodes represent individual workflow steps (parse intent → plan actions → execute tool A → execute tool B → verify → report). The configured LLM serves as the reasoning engine."
+    },
+    {
+      step: 4,
+      title: "Tool Layer — MCP Servers",
+      description:
+        "Microsoft Teams is integrated using Incoming Webhooks or Teams Workflow webhooks. Workflow execution summaries and notifications are delivered to the configured Teams channel through the webhook endpoint."
+    },
+    {
+      step: 5,
+      title: "Observability — Langfuse",
+      description:
+        "Every LLM call, tool invocation, and agent decision within the workflow is traced to Langfuse. Traces include input/output, latency, cost, and model parameters. The Langfuse dashboard must contain traces from at least three end-to-end workflow executions."
+    }
+  ],
+  evalCriteria: [
+    {
+      icon: "⚙️",
+      title: "Functional Correctness",
+      weight: "35%",
+      description:
+        "Does the platform execute end-to-end workflows successfully? Are all four tool integrations (Notion, GitHub, Microsoft Teams Webhooks, Google Drive) functional? Does failure recovery and rollback behave as described?"
+    },
+    {
+      icon: "🧠",
+      title: "Agent Design & Orchestration",
+      weight: "25%",
+      description:
+        "Quality of the LangGraph agent graph — state design, node decomposition, conditional routing logic, and how effectively the LLM is prompted to plan and execute steps. Langfuse traces must be present and well-structured."
+    },
+    {
+      icon: "🖥️",
+      title: "User Experience & Real-Time Feedback",
+      weight: "20%",
+      description:
+        "Quality of the React UI, clarity of real-time SSE execution logs, usefulness of workflow templates, and overall usability for a non-technical business user."
+    },
+    {
+      icon: "📦",
+      title: "Code Quality & Documentation",
+      weight: "15%",
+      description:
+        "Repository structure, code readability, completeness of README, quality of .env.example, and whether setup instructions allow the evaluator to run the project independently."
+    },
+    {
+      icon: "✨",
+      title: "Innovation & Bonus Features",
+      weight: "5%",
+      description:
+        "Any creative extensions beyond the minimum requirements — e.g., multi-agent sub-graphs, workflow scheduling, a visual workflow builder, or additional automation capabilities."
+    }
+  ],
+  submissionFields: [
+    {
+      key: "participant_id",
+      label: "Participant ID",
+      description: "Your unique FDE programme participant ID (provided at onboarding). Format: FDE-YYYY-NNNN"
+    },
+    {
+      key: "github_repo_url",
+      label: "GitHub Repository",
+      description: "Public GitHub repository URL containing your full project."
+    },
+    {
+      key: "langfuse_project_url",
+      label: "Langfuse Dashboard",
+      description:
+        "URL to your Langfuse project dashboard showing traces from at least 3 completed workflow runs. Must be publicly accessible or shared with the evaluator account."
+    },
+    {
+      key: "demo_video_url",
+      label: "Demo Video",
+      description:
+        "Link to a screen recording (unlisted YouTube or Loom) demonstrating one complete end-to-end workflow execution. Max duration: 5 minutes."
+    },
+    {
+      key: "readme_checklist",
+      label: "README Checklist",
+      description:
+        "Confirm your README.md contains: setup instructions, .env.example, architecture diagram, list of implemented features, and known limitations."
+    }
+  ],
+  minimumPassRequirements: [
+    "Execute at least one complete workflow end-to-end",
+    "Integrate at least three of the four required tools (Notion, GitHub, Microsoft Teams, Google Drive)",
+    "Include Langfuse traces for all LLM calls",
+    "Have a runnable README with all required env variables documented"
+  ]
+};
+
 export const learnerDashboardContent: DashboardContent = {
   hero: {
-    eyebrow: "DIFY Enablement Program",
-    title: "Assessment portal for agent builders moving from training to real delivery.",
+    eyebrow: "FDE Capstone Assessment",
+    title: "WorkflowWeaver — AI Agent for Cross-Tool Workflow Automation.",
     description:
-      "A focused learner workspace inspired by the platform spec: gated levels, portfolio-grade submissions, reviewer-ready evidence, and a calm progress experience that makes the next move obvious.",
-    primaryAction: "Start Level 1 Brief",
+      "Build a workflow automation platform where users describe business processes in natural language and an AI agent executes them across Notion, GitHub, Teams, and Google Drive — autonomously.",
+    primaryAction: "View Problem Statement",
     secondaryAction: "Preview Submission Rules"
   },
   profile: {
@@ -86,35 +244,35 @@ export const learnerDashboardContent: DashboardContent = {
   ],
   activeAssessment: {
     id: "assessment-1",
-    eyebrow: "Active Assessment",
-    title: "Level 1 - Basic LLM Agent",
-    status: "Hands-on assessment",
+    eyebrow: "FDE Capstone — Active Assessment",
+    title: "WorkflowWeaver — AI Agent for Cross-Tool Workflow Automation",
+    status: "Hands-on capstone",
     summary:
-      "Implement a basic LLM agent that accepts a prompt, calls the configured model, and writes its final response to an output file. This level measures hands-on build ability, not course completion.",
-    scenarioTitle: "Build a minimal working LLM agent",
+      "Design and build WorkflowWeaver — a platform where a business user can describe a workflow in plain English and an AI agent executes the entire multi-tool sequence across Notion, GitHub, Microsoft Teams, and Google Drive — autonomously, reliably, and with observable progress.",
+    scenarioTitle: "Build a workflow automation platform",
     scenarioBody:
-      "Create a small project directory for a basic LLM agent. The agent implementation should live in agent.py, configuration should be stored in .env, a sample run should produce output.txt, and README.md should explain exactly how to run the program. Compress this directory into a single ZIP and submit it for review. The goal is to demonstrate that you can assemble and run a simple agent end to end.",
+      "Users describe business processes in natural language (e.g., \"Take today's meeting notes and create a Notion project page, raise GitHub issues for each action item, and post a summary to Microsoft Teams\"). Your system must parse the intent, plan a multi-step action sequence, execute each tool via MCP, stream live progress to the UI, and produce a structured execution report — all while tracing every LLM call through Langfuse.",
     deliverables: [
-      "A ZIP file containing agent.py",
-      "The same ZIP must include output.txt from a successful sample run",
-      "The same ZIP must include .env with the expected environment variable structure",
-      "The same ZIP must include README.md with steps to install dependencies and run the agent"
+      "GitHub repository with full project source code (React frontend + FastAPI/Node.js backend + LangGraph agent)",
+      "Langfuse dashboard URL showing traces from at least 3 completed workflow executions",
+      "Demo video (unlisted YouTube or Loom, max 5 minutes) showing one complete end-to-end workflow run",
+      "README.md with setup instructions, .env.example, architecture diagram, feature list, and known limitations"
     ],
     evidenceCards: [
       {
-        label: "Assessment Window",
-        value: "72 hours",
-        note: "Starts when the brief is opened for the first time."
+        label: "Effort Estimate",
+        value: "30 – 40 hrs",
+        note: "Expert-level capstone. Plan for integration testing time."
       },
       {
         label: "Pass Threshold",
-        value: "3.5 / 5",
-        note: "Every required rubric dimension must stay at 3 or higher."
+        value: "3 of 4 tools",
+        note: "At least three tool integrations must be functional end-to-end."
       },
       {
-        label: "Reviewer SLA",
-        value: "1 business day",
-        note: "Borderline or flagged submissions route to a senior FDE reviewer."
+        label: "Evaluation",
+        value: "DIFY Workflow",
+        note: "Submitted via FDE programme's internal DIFY evaluation platform."
       }
     ]
   },
@@ -164,58 +322,52 @@ export const learnerDashboardContent: DashboardContent = {
     expectedVerdict: "Expected first verdict: in ~4 minutes"
   },
   submissionWorkspace: {
-    title: "Package the Level 1 ZIP submission",
+    title: "Submit your WorkflowWeaver project",
     fields: [
       {
-        label: "Expected directory structure",
-        value:
-          "level-1-basic-llm-agent/\n|-- agent.py\n|-- output.txt\n|-- .env\n|-- README.md",
-        fullWidth: true,
-        variant: "textarea"
-      },
-      {
-        label: "Submission ZIP",
-        fileName: "submission-level-1.zip",
-        value: "\nUpload a single .zip containing agent.py, output.txt, .env, and README.md",
+        label: "Project ZIP",
+        fileName: "workflowweaver-submission.zip",
+        value: "\nUpload a ZIP of your full project (frontend + backend + LangGraph agent)",
         fullWidth: true,
         variant: "upload"
       },
       {
-        label: "Assessment note",
+        label: "Submission notes",
         value:
-          "Build a working basic LLM agent, verify it runs once, generate output.txt, and compress the directory before submission.",
+          "Add your GitHub repo URL, Langfuse dashboard URL, and demo video link here before submitting.",
         fullWidth: true,
         variant: "textarea"
       }
     ]
   },
   rubric: [
-    { name: "Prompt architecture", weight: "25%", score: "Target 4.0" },
-    { name: "Grounded behavior", weight: "25%", score: "Target 3.5" },
-    { name: "UX clarity", weight: "20%", score: "Target 4.0" },
-    { name: "Robust fallbacks", weight: "15%", score: "Target 3.0" },
-    { name: "Documentation quality", weight: "15%", score: "Target 3.5" }
+    { name: "Functional Correctness", weight: "35%", score: "Target 3.5" },
+    { name: "Agent Design & Orchestration", weight: "25%", score: "Target 3.5" },
+    { name: "UX & Real-Time Feedback", weight: "20%", score: "Target 4.0" },
+    { name: "Code Quality & Docs", weight: "15%", score: "Target 3.5" },
+    { name: "Innovation & Bonus", weight: "5%", score: "Target 3.0" }
   ],
   activity: [
     {
-      id: "activity-attempt-created",
-      title: "Attempt created",
+      id: "activity-capstone-opened",
+      title: "Capstone workspace opened",
       meta: "Today, 09:10",
-      detail: "Your Level 1 workspace is active and ready for submission packaging."
+      detail: "WorkflowWeaver FDE Capstone is active. Build your cross-tool automation platform."
     },
     {
       id: "activity-checks-configured",
       title: "Automated checks configured",
       meta: "Today, 09:12",
-      detail: "Health probe, manifest validation, and rubric preview were provisioned."
+      detail: "GitHub repo validation, Langfuse trace check, and README verification provisioned."
     },
     {
       id: "activity-mentor-checkpoint",
       title: "Mentor checkpoint",
       meta: "Tomorrow, 16:00",
-      detail: "Optional design review before you freeze the first attempt."
+      detail: "Optional architecture review before you freeze your first attempt."
     }
-  ]
+  ],
+  problemStatement: workflowWeaverProblemStatement
 };
 
 export const reviewerWorkspaceContent: ReviewerWorkspace = {

@@ -1,4 +1,4 @@
-import { LearnerDashboardShell } from "@/components/home/learner-dashboard-shell";
+import { LearnerDashboardShell } from "@/components/learner/learner-dashboard-shell";
 import { AppNav } from "@/components/navigation/app-nav";
 import { learnerDashboardContent } from "@/data/dashboard-content";
 

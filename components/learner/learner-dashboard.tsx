@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { ActivityTimeline } from "@/components/home/activity-timeline";
-import { ActiveAssessmentPanel } from "@/components/home/active-assessment-panel";
-import { HeroSection } from "@/components/home/hero-section";
-import { ProgressRail } from "@/components/home/progress-rail";
-import { SubmissionWorkspace } from "@/components/home/submission-workspace";
+import { ActivityTimeline } from "@/components/learner/activity-timeline";
+import { HeroSection } from "@/components/learner/hero-section";
+import { LiveStatusCard } from "@/components/learner/live-status-card";
+import { ProblemStatementPanel } from "@/components/learner/problem-statement-panel";
+import { SubmissionWorkspace } from "@/components/learner/submission-workspace";
 
 import {
   fetchSubmission,
@@ -262,35 +262,27 @@ export function LearnerDashboard({
         profile={content.profile}
       />
 
-      <section className="layout-grid">
-        <ProgressRail
-          levels={content.levels}
+      <ProblemStatementPanel problemStatement={content.problemStatement} />
+
+      <section className="sw-grid">
+        <SubmissionWorkspace
+          assessment={content.activeAssessment}
+          workspace={content.submissionWorkspace}
+          onSubmissionSubmitted={(submissionId) => {
+            setCurrentSubmissionId(submissionId);
+            setSubmission(null);
+            setLiveSubmissionEvents([]);
+          }}
+          username={content.profile.username}
+        />
+
+        <LiveStatusCard
           liveEvaluationStatus={content.liveEvaluationStatus}
-          rubric={content.rubric}
           submission={submission}
           liveEvents={liveSubmissionEvents}
           currentSubmissionId={currentSubmissionId}
         />
-
-        <div className="stack">
-          <ActiveAssessmentPanel
-            assessment={content.activeAssessment}
-          />
-
-          <SubmissionWorkspace
-            assessment={content.activeAssessment}
-            workspace={content.submissionWorkspace}
-            onSubmissionSubmitted={(submissionId) => {
-              setCurrentSubmissionId(submissionId);
-              setSubmission(null);
-              setLiveSubmissionEvents([]);
-            }}
-            username={content.profile.username}
-          />
-        </div>
       </section>
-
-      <br />
 
       <section className="stack">
         <ActivityTimeline

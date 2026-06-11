@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LearnerDashboard } from "@/components/home/learner-dashboard";
+import { LearnerDashboard } from "@/components/learner/learner-dashboard";
 import { getStoredUser } from "@/lib/auth";
 import type { DashboardContent } from "@/types/assessment";
 

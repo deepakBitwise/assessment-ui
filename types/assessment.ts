@@ -110,6 +110,7 @@ export type DashboardContent = {
   submissionWorkspace: SubmissionWorkspace;
   rubric: RubricItem[];
   activity: ActivityItem[];
+  problemStatement: ProblemStatementData;
 };
 
 export type AppRole = "learner" | "reviewer" | "administrator";
@@ -181,6 +182,47 @@ export type AssessmentResponse = {
 export type AssessmentUpdatePayload = {
   problem_statement: string;
   deliverables: string[];
+};
+
+export type PsFeature = {
+  icon: string;
+  title: string;
+  description: string;
+};
+
+export type PsArchStep = {
+  step: number;
+  title: string;
+  description: string;
+};
+
+export type PsEvalCriterion = {
+  icon: string;
+  title: string;
+  weight: string;
+  description: string;
+};
+
+export type PsSubmissionField = {
+  key: string;
+  label: string;
+  description: string;
+};
+
+export type ProblemStatementData = {
+  id: string;
+  title: string;
+  subtitle: string;
+  tags: string[];
+  difficulty: string;
+  effort: string;
+  overview: string;
+  mission: string;
+  features: PsFeature[];
+  architectureSteps: PsArchStep[];
+  evalCriteria: PsEvalCriterion[];
+  submissionFields: PsSubmissionField[];
+  minimumPassRequirements: string[];
 };
 
 export type SubmissionStatus = "PASSED" | "PENDING" | "REJECTED";

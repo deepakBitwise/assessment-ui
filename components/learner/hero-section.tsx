@@ -1,4 +1,4 @@
-import { ProfileCard } from "@/components/home/profile-card";
+import { ProfileCard } from "@/components/learner/profile-card";
 import type { HeroContent, Profile } from "@/types/assessment";
 
 type HeroSectionProps = {

@@ -1,4 +1,4 @@
-import { ReviewerDashboard } from "@/components/home/reviewer-dashboard";
+import { ReviewerDashboard } from "@/components/Reviewer/reviewer-dashboard";
 import { AppNav } from "@/components/navigation/app-nav";
 
 export default function ReviewerPage() {
