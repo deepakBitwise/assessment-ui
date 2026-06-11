@@ -5,19 +5,20 @@ import type { ProblemStatementData } from "@/types/assessment";
 
 type Props = {
   problemStatements: ProblemStatementData[];
+  selectedId: string;
+  onSelect: (id: string) => void;
 };
 
 const TABS = ["Overview", "Architecture", "Submit & Grading"] as const;
 type Tab = (typeof TABS)[number];
 
-export function ProblemStatementPanel({ problemStatements }: Props) {
-  const [selectedId, setSelectedId] = useState(problemStatements[0]?.id ?? "");
+export function ProblemStatementPanel({ problemStatements, selectedId, onSelect }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
 
   const ps = problemStatements.find((p) => p.id === selectedId) ?? problemStatements[0];
 
   function handleSelect(id: string) {
-    setSelectedId(id);
+    onSelect(id);
     setActiveTab("Overview");
   }
 

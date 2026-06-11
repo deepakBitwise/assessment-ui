@@ -9,11 +9,6 @@ export type Level = {
   brief: string;
 };
 
-export type EvidenceCard = {
-  label: string;
-  value: string;
-  note: string;
-};
 
 export type RubricItem = {
   name: string;
@@ -47,17 +42,6 @@ export type Profile = {
   mentorNote: string;
 };
 
-export type ActiveAssessment = {
-  id: string;
-  eyebrow: string;
-  title: string;
-  status: string;
-  summary: string;
-  scenarioTitle: string;
-  scenarioBody: string;
-  deliverables: string[];
-  evidenceCards: EvidenceCard[];
-};
 
 export type SubmissionField = {
   label: string;
@@ -105,7 +89,6 @@ export type DashboardContent = {
   hero: HeroContent;
   profile: Profile;
   levels: Level[];
-  activeAssessment: ActiveAssessment;
   liveEvaluationStatus: LiveEvaluationStatus;
   submissionWorkspace: SubmissionWorkspace;
   rubric: RubricItem[];
@@ -211,6 +194,7 @@ export type PsSubmissionField = {
 
 export type ProblemStatementData = {
   id: string;
+  assessmentId: string;
   title: string;
   track: string;
   subtitle: string;

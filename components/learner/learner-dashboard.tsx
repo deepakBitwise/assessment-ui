@@ -14,6 +14,8 @@ import {
   fetchSubmissions
 } from "@/lib/api";
 
+import { getStoredUser } from "@/lib/auth";
+
 import type {
   ActivityItem,
   DashboardContent,
@@ -24,7 +26,7 @@ import type {
 } from "@/types/assessment";
 
 type LearnerDashboardProps = {
-  content: DashboardContent;
+  initialContent: DashboardContent;
 };
 
 const absoluteDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -121,16 +123,37 @@ function formatSubmissionActivity(
 }
 
 export function LearnerDashboard({
-  content
+  initialContent
 }: LearnerDashboardProps) {
+  const [content, setContent] = useState(initialContent);
+  const [selectedPsId, setSelectedPsId] = useState(initialContent.problemStatements[0]?.id ?? "");
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [liveSubmissionEvents, setLiveSubmissionEvents] = useState<SubmissionEventLog[]>([]);
-  const [activity, setActivity] = useState<ActivityItem[]>(content.activity);
+  const [activity, setActivity] = useState<ActivityItem[]>(initialContent.activity);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string>(
-    content.liveEvaluationStatus.submissionId
+    initialContent.liveEvaluationStatus.submissionId
   );
+
+  const activeAssessmentId =
+    content.problemStatements.find((ps: { id: string; assessmentId: string }) => ps.id === selectedPsId)?.assessmentId ??
+    content.problemStatements[0]?.assessmentId ??
+    "";
+
+  useEffect(() => {
+    const user = getStoredUser();
+    if (!user) return;
+    setContent((c) => ({
+      ...c,
+      profile: {
+        ...c.profile,
+        name: user.full_name || user.username,
+        username: user.username,
+        role: user.role === "LEARNER" ? c.profile.role : user.role
+      }
+    }));
+  }, [initialContent]);
 
   useEffect(() => {
     setCurrentSubmissionId(content.liveEvaluationStatus.submissionId);
@@ -262,11 +285,15 @@ export function LearnerDashboard({
         profile={content.profile}
       />
 
-      <ProblemStatementPanel problemStatements={content.problemStatements} />
+      <ProblemStatementPanel
+        problemStatements={content.problemStatements}
+        selectedId={selectedPsId}
+        onSelect={setSelectedPsId}
+      />
 
       <section className="sw-grid">
         <SubmissionWorkspace
-          assessment={content.activeAssessment}
+          assessmentId={activeAssessmentId}
           workspace={content.submissionWorkspace}
           onSubmissionSubmitted={(submissionId) => {
             setCurrentSubmissionId(submissionId);

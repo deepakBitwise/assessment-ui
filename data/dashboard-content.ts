@@ -34,6 +34,7 @@ export const workspaceRouteCards: Array<
 
 const workflowWeaverProblemStatement: ProblemStatementData = {
   id: "FDE-CAPSTONE-001",
+  assessmentId: "assessment-1",
   title: "WorkflowWeaver",
   track: "Enterprise Agentic",
   subtitle:
@@ -192,6 +193,7 @@ const workflowWeaverProblemStatement: ProblemStatementData = {
 
 const dataPilotProblemStatement: ProblemStatementData = {
   id: "FDE-CAPSTONE-002",
+  assessmentId: "assessment-2",
   title: "DataPilot",
   track: "Data Engineering",
   subtitle:
@@ -401,40 +403,6 @@ export const learnerDashboardContent: DashboardContent = {
         "Design a multi-step workflow that reasons across structured tools and produces traceable summaries."
     }
   ],
-  activeAssessment: {
-    id: "assessment-1",
-    eyebrow: "FDE Capstone — Active Assessment",
-    title: "WorkflowWeaver — AI Agent for Cross-Tool Workflow Automation",
-    status: "Hands-on capstone",
-    summary:
-      "Design and build WorkflowWeaver — a platform where a business user can describe a workflow in plain English and an AI agent executes the entire multi-tool sequence across Notion, GitHub, Microsoft Teams, and Google Drive — autonomously, reliably, and with observable progress.",
-    scenarioTitle: "Build a workflow automation platform",
-    scenarioBody:
-      "Users describe business processes in natural language (e.g., \"Take today's meeting notes and create a Notion project page, raise GitHub issues for each action item, and post a summary to Microsoft Teams\"). Your system must parse the intent, plan a multi-step action sequence, execute each tool via MCP, stream live progress to the UI, and produce a structured execution report — all while tracing every LLM call through Langfuse.",
-    deliverables: [
-      "GitHub repository with full project source code (React frontend + FastAPI/Node.js backend + LangGraph agent)",
-      "Langfuse dashboard URL showing traces from at least 3 completed workflow executions",
-      "Demo video (unlisted YouTube or Loom, max 5 minutes) showing one complete end-to-end workflow run",
-      "README.md with setup instructions, .env.example, architecture diagram, feature list, and known limitations"
-    ],
-    evidenceCards: [
-      {
-        label: "Effort Estimate",
-        value: "30 – 40 hrs",
-        note: "Expert-level capstone. Plan for integration testing time."
-      },
-      {
-        label: "Pass Threshold",
-        value: "3 of 4 tools",
-        note: "At least three tool integrations must be functional end-to-end."
-      },
-      {
-        label: "Evaluation",
-        value: "DIFY Workflow",
-        note: "Submitted via FDE programme's internal DIFY evaluation platform."
-      }
-    ]
-  },
   liveEvaluationStatus: {
     submissionId: DEFAULT_SUBMISSION_ID,
     levelAttempt: "L1 attempt 1",

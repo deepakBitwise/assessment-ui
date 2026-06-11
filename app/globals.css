@@ -1624,7 +1624,8 @@ textarea {
   text-align: left;
   cursor: pointer;
   transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
-  min-width: 180px;
+  flex: 1;
+  min-width: 0;
 }
 
 .ps-switcher__card:hover {

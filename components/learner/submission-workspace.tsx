@@ -3,7 +3,6 @@
 import { useEffect, useId, useState, type ChangeEvent } from "react";
 import { getPresignedDownloadUrl } from "@/lib/api";
 import type {
-  ActiveAssessment,
   SubmissionField,
   SubmissionWorkspace as SubmissionWorkspaceData
 } from "@/types/assessment";
@@ -23,7 +22,7 @@ type UploadUrlResponse = {
 };
 
 type SubmissionWorkspaceProps = {
-  assessment: ActiveAssessment;
+  assessmentId: string;
   workspace: SubmissionWorkspaceData;
   onSubmissionSubmitted: (submissionId: string) => void;
   username: string;
@@ -54,14 +53,9 @@ function getValueClassName(field: SubmissionField) {
   }
 }
 
-function getUploadField(
-  fields: SubmissionWorkspaceData["fields"]
-): SubmissionField | undefined {
-  return fields.find((field) => field.variant === "upload");
-}
 
 export function SubmissionWorkspace({
-  assessment,
+  assessmentId,
   workspace,
   onSubmissionSubmitted,
   username
@@ -76,9 +70,28 @@ export function SubmissionWorkspace({
   );
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [uploadedFileKey, setUploadedFileKey] = useState<string | null>(null);
-  const uploadField = getUploadField(workspace.fields);
-  const backendFileName = uploadField?.fileName ?? null;
+  const [backendFileName, setBackendFileName] = useState<string | null>(null);
   const hasBackendFile = typeof backendFileName === "string" && backendFileName.trim().length > 0;
+
+  useEffect(() => {
+    if (!assessmentId) return;
+    let isActive = true;
+
+    fetch(`${API_BASE_URL}/assessments/${assessmentId}`, {
+      headers: { accept: "application/json" }
+    })
+      .then((res) => res.ok ? res.json() : Promise.reject(res.status))
+      .then((data: { attachment_object_name?: string | null }) => {
+        if (isActive) {
+          setBackendFileName(data.attachment_object_name ?? null);
+        }
+      })
+      .catch(() => {
+        if (isActive) setBackendFileName(null);
+      });
+
+    return () => { isActive = false; };
+  }, [assessmentId]);
 
   const hasZipSelection = Boolean(selectedZip);
   const isZipUploaded = uploadState === "uploaded" || uploadState === "submitted";
@@ -142,7 +155,7 @@ export function SubmissionWorkspace({
         body: JSON.stringify({
           filename: selectedZip.name,
           content_type: selectedZip.type || "application/zip",
-          assessment_id: assessment.id
+          assessment_id: assessmentId
         })
       });
 
@@ -205,7 +218,7 @@ export function SubmissionWorkspace({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          assessment_id: assessment.id,
+          assessment_id: assessmentId,
           user_id: username || DEFAULT_USER_ID,
         })
       });
