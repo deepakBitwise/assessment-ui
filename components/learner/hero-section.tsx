@@ -14,8 +14,8 @@ export function HeroSection({ hero, profile }: HeroSectionProps) {
         <h1>{hero.title}</h1>
         <p className="hero__text">{hero.description}</p>
         <div className="hero__actions">
-          <button className="button button--primary">{hero.primaryAction}</button>
-          <button className="button button--ghost">{hero.secondaryAction}</button>
+          {/* <button className="button button--primary">{hero.primaryAction}</button> */}
+          {/* <button className="button button--ghost">{hero.secondaryAction}</button> */}
         </div>
       </div>
 

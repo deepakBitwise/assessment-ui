@@ -35,6 +35,7 @@ export const workspaceRouteCards: Array<
 const workflowWeaverProblemStatement: ProblemStatementData = {
   id: "FDE-CAPSTONE-001",
   title: "WorkflowWeaver",
+  track: "Enterprise Agentic",
   subtitle:
     "Build a workflow automation platform where users describe business processes in natural language, and an AI agent executes them across connected business tools — autonomously.",
   tags: ["Expert", "Agentic AI", "MCP Orchestration", "LangGraph", "Enterprise Automation"],
@@ -189,14 +190,172 @@ const workflowWeaverProblemStatement: ProblemStatementData = {
   ]
 };
 
+const dataPilotProblemStatement: ProblemStatementData = {
+  id: "FDE-CAPSTONE-002",
+  title: "DataPilot",
+  track: "Data Engineering",
+  subtitle:
+    "Build an intelligent data pipeline platform that ingests, transforms, and monitors data across sources — with LLM-powered quality checks and real-time anomaly alerting.",
+  tags: ["Expert", "Data Engineering", "LLM Quality Monitoring", "dbt", "Airflow", "Observability"],
+  difficulty: "★★★★★",
+  effort: "35 – 45 hrs",
+  overview:
+    "Modern data teams operate across fragmented sources — databases, APIs, flat files, and streaming systems. Manual quality checks are slow, brittle, and don't scale. DataPilot challenges you to build a pipeline that moves data end-to-end and uses an LLM to explain anomalies, validate schemas, and narrate data quality issues in plain English.",
+  mission:
+    "Design and build DataPilot — a data pipeline platform where an AI agent ingests data from multiple sources, runs dbt-style transformations, applies LLM-powered quality checks, and delivers a structured quality report with plain-English anomaly explanations to a real-time dashboard.",
+  features: [
+    {
+      icon: "🔌",
+      title: "Multi-Source Ingestion",
+      description:
+        "Connect to at least two data sources (e.g., REST API, PostgreSQL, CSV/Parquet file) and unify them into a single staging layer."
+    },
+    {
+      icon: "⚙️",
+      title: "Transformation Pipeline",
+      description:
+        "Apply structured transformations using dbt models or Pandas — cleaning, deduplication, type casting, and computed columns."
+    },
+    {
+      icon: "🧠",
+      title: "LLM Quality Monitor",
+      description:
+        "Use a production LLM to describe schema violations, flag statistical anomalies, and generate plain-English summaries of data health."
+    },
+    {
+      icon: "📡",
+      title: "Real-Time Monitoring Dashboard",
+      description:
+        "Stream pipeline run logs and quality check results to a React frontend via SSE. Show run status, row counts, and anomaly flags live."
+    },
+    {
+      icon: "🔔",
+      title: "Anomaly Alerting",
+      description:
+        "Detect threshold breaches and statistical outliers in each pipeline run. Send alerts to Microsoft Teams or Slack via webhook."
+    },
+    {
+      icon: "🗺️",
+      title: "Data Lineage View",
+      description:
+        "Render a simple lineage graph showing how raw sources flow through transformations to final output tables."
+    }
+  ],
+  architectureSteps: [
+    {
+      step: 1,
+      title: "Ingestion Layer — FastAPI + Source Connectors",
+      description:
+        "A FastAPI backend that accepts pipeline trigger requests, pulls data from configured sources (API, database, file), and stages it in a local warehouse layer (DuckDB or PostgreSQL)."
+    },
+    {
+      step: 2,
+      title: "Transformation Engine — dbt / Pandas",
+      description:
+        "Run model transformations against the staged data. dbt models or Pandas scripts apply business logic, cleaning rules, and computed metrics. Each run produces versioned output tables."
+    },
+    {
+      step: 3,
+      title: "LLM Quality Agent — Claude API + LangGraph",
+      description:
+        "A LangGraph agent reads the transformed data profile (row counts, nulls, type distributions, outliers) and uses the LLM to generate quality verdicts and plain-English anomaly explanations. Every LLM call is traced via Langfuse."
+    },
+    {
+      step: 4,
+      title: "Alerting — Teams / Slack Webhook",
+      description:
+        "When the quality agent flags critical anomalies, post a structured alert to a configured Microsoft Teams or Slack channel via webhook — including run ID, affected columns, and the LLM's explanation."
+    },
+    {
+      step: 5,
+      title: "Frontend Dashboard — React + SSE",
+      description:
+        "A React UI that shows pipeline run history, live log streaming via SSE, quality scores per run, and a simple lineage graph. Users can trigger runs and view LLM quality reports inline."
+    }
+  ],
+  evalCriteria: [
+    {
+      icon: "⚙️",
+      title: "Pipeline Correctness",
+      weight: "35%",
+      description:
+        "Does data flow end-to-end from source to output? Are transformations applied correctly? Does the quality agent produce meaningful reports?"
+    },
+    {
+      icon: "🧠",
+      title: "LLM Integration Quality",
+      weight: "25%",
+      description:
+        "Are LLM calls well-prompted and producing accurate, readable quality summaries? Are Langfuse traces present for all LLM calls across at least 3 pipeline runs?"
+    },
+    {
+      icon: "🖥️",
+      title: "Dashboard & Real-Time Feedback",
+      weight: "20%",
+      description:
+        "Quality of the React UI, clarity of live SSE log streaming, and usefulness of the quality report view and lineage graph."
+    },
+    {
+      icon: "📦",
+      title: "Code Quality & Documentation",
+      weight: "15%",
+      description:
+        "Repository structure, README completeness, .env.example coverage, and whether the evaluator can run the full pipeline independently."
+    },
+    {
+      icon: "✨",
+      title: "Innovation & Bonus Features",
+      weight: "5%",
+      description:
+        "Scheduling (Airflow/Prefect), column-level lineage, multi-tenant runs, or a conversational query interface over the quality reports."
+    }
+  ],
+  submissionFields: [
+    {
+      key: "participant_id",
+      label: "Participant ID",
+      description: "Your unique FDE programme participant ID. Format: FDE-YYYY-NNNN"
+    },
+    {
+      key: "github_repo_url",
+      label: "GitHub Repository",
+      description: "Public GitHub repository URL with full project source."
+    },
+    {
+      key: "langfuse_project_url",
+      label: "Langfuse Dashboard",
+      description:
+        "URL to your Langfuse project showing traces from at least 3 pipeline runs. Must be publicly accessible."
+    },
+    {
+      key: "demo_video_url",
+      label: "Demo Video",
+      description:
+        "Unlisted YouTube or Loom link demonstrating one complete pipeline run with quality report. Max 5 minutes."
+    },
+    {
+      key: "readme_checklist",
+      label: "README Checklist",
+      description:
+        "Confirm README includes: setup steps, .env.example, architecture diagram, feature list, and sample data sources."
+    }
+  ],
+  minimumPassRequirements: [
+    "Execute at least one complete pipeline run end-to-end (ingest → transform → quality check)",
+    "LLM quality agent must produce at least one readable anomaly report",
+    "Include Langfuse traces for all LLM calls across at least 3 runs",
+    "Have a runnable README with all required env variables documented"
+  ]
+};
+
 export const learnerDashboardContent: DashboardContent = {
   hero: {
-    eyebrow: "FDE Capstone Assessment",
-    title: "WorkflowWeaver — AI Agent for Cross-Tool Workflow Automation.",
+    eyebrow: "FDE Enablement Programme",
+    title: "Your capstone assessment portal.",
     description:
-      "Build a workflow automation platform where users describe business processes in natural language and an AI agent executes them across Notion, GitHub, Teams, and Google Drive — autonomously.",
-    primaryAction: "View Problem Statement",
-    secondaryAction: "Preview Submission Rules"
+      "Submit your work, track evaluation status in real time, and access all capstone problem statements from one place.",
+    primaryAction: "View Assessments",
+    secondaryAction: "Submission Rules"
   },
   profile: {
     program: "Learner profile",
@@ -367,7 +526,7 @@ export const learnerDashboardContent: DashboardContent = {
       detail: "Optional architecture review before you freeze your first attempt."
     }
   ],
-  problemStatement: workflowWeaverProblemStatement
+  problemStatements: [workflowWeaverProblemStatement, dataPilotProblemStatement]
 };
 
 export const reviewerWorkspaceContent: ReviewerWorkspace = {

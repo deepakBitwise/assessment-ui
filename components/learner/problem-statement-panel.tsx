@@ -4,20 +4,49 @@ import { useState } from "react";
 import type { ProblemStatementData } from "@/types/assessment";
 
 type Props = {
-  problemStatement: ProblemStatementData;
+  problemStatements: ProblemStatementData[];
 };
 
 const TABS = ["Overview", "Architecture", "Submit & Grading"] as const;
 type Tab = (typeof TABS)[number];
 
-export function ProblemStatementPanel({ problemStatement: ps }: Props) {
+export function ProblemStatementPanel({ problemStatements }: Props) {
+  const [selectedId, setSelectedId] = useState(problemStatements[0]?.id ?? "");
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
+
+  const ps = problemStatements.find((p) => p.id === selectedId) ?? problemStatements[0];
+
+  function handleSelect(id: string) {
+    setSelectedId(id);
+    setActiveTab("Overview");
+  }
+
+  if (!ps) return null;
 
   return (
     <div className="panel ps-panel">
+      {/* Assessment switcher — shown only when there are multiple */}
+      {problemStatements.length > 1 && (
+        <div className="ps-switcher">
+          {problemStatements.map((p) => (
+            <button
+              className={`ps-switcher__card${p.id === selectedId ? " ps-switcher__card--active" : ""}`}
+              key={p.id}
+              onClick={() => handleSelect(p.id)}
+              type="button"
+            >
+              <span className="ps-switcher__id">{p.id}</span>
+              <span className="ps-switcher__name">{p.title}</span>
+              <span className="chip ps-switcher__track">{p.track}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Header */}
       <div className="panel__header ps-panel__header">
         <div>
-          <p className="eyebrow">{ps.id} · Enterprise Agentic Track</p>
+          <p className="eyebrow">{ps.id} · {ps.track}</p>
           <h2>{ps.title}</h2>
           <p className="ps-subtitle">{ps.subtitle}</p>
         </div>
@@ -81,8 +110,8 @@ export function ProblemStatementPanel({ problemStatement: ps }: Props) {
       {activeTab === "Architecture" && (
         <div className="ps-section">
           <p className="ps-overview">
-            The following describes the recommended high-level architecture. All mandatory
-            components must be present and demonstrably integrated.
+            Recommended high-level architecture — all mandatory components must be
+            present and demonstrably integrated.
           </p>
           <div className="ps-steps">
             {ps.architectureSteps.map((step, index) => (

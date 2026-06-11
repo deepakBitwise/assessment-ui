@@ -52,10 +52,11 @@ export function LiveStatusCard({
   liveEvents,
   currentSubmissionId = null
 }: LiveStatusCardProps) {
-  const displayedSubmissionId =
-    currentSubmissionId ??
-    submission?.submission_id ??
-    liveEvaluationStatus.submissionId;
+  const hasSubmission = submission !== null;
+
+  const displayedSubmissionId = hasSubmission
+    ? (currentSubmissionId ?? submission.submission_id ?? liveEvaluationStatus.submissionId)
+    : null;
 
   return (
     <div className="panel live-status-panel">
@@ -64,63 +65,87 @@ export function LiveStatusCard({
           <p className="eyebrow">Live Evaluation</p>
           <h2>Current status</h2>
         </div>
-        <span className="panel__badge panel__badge--live">Live</span>
+        <span className={`panel__badge${hasSubmission ? " panel__badge--live" : ""}`}>
+          {hasSubmission ? "Live" : "Awaiting"}
+        </span>
       </div>
 
-      {displayedSubmissionId && (
-        <p className="live-status-panel__id">
-          Submission: <code>{displayedSubmissionId}</code>
-        </p>
-      )}
-
-      <div className="tier-status-list">
-        {liveEvaluationStatus.tiers.map((tier, index) => {
-          const stateKey = tierStateMap[index];
-          const tierState = submission?.[stateKey];
-          return (
-            <div className="tier-status-item" key={tier.title}>
-              <strong>{tier.title}</strong>
-              <span className={`status ${getStatusClass(tierState)}`}>
-                {getStatusLabel(tierState)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="live-event-stream">
-        <div className="live-event-stream__header">
-          <strong>Latest logs</strong>
-          <span>
-            {liveEvents.length > 0
-              ? `${liveEvents.length} update${liveEvents.length === 1 ? "" : "s"}`
-              : "Waiting for evaluator output"}
-          </span>
-        </div>
-
-        {liveEvents.length > 0 ? (
-          <div className="live-event-stream__list">
-            {liveEvents.map((event) => (
-              <article
-                className="live-event-card"
-                key={event.id ?? `${event.type}-${event.timestamp}-${event.value}`}
-              >
-                <div className="live-event-card__head">
-                  <p>{event.value}</p>
-                  <span className={`status ${getEventTone(event.type)}`}>
-                    {event.type}
-                  </span>
-                  <time>{formatEventTimestamp(event.timestamp)}</time>
-                </div>
-              </article>
+      {!hasSubmission ? (
+        /* ── Empty / no-submission state ── */
+        <div className="live-status-empty">
+          <p className="live-status-empty__title">No active submission</p>
+          <p className="live-status-empty__hint">
+            Submit your project using the workspace on the left — evaluation
+            status and logs will appear here in real time.
+          </p>
+          <div className="live-status-empty__tiers">
+            {liveEvaluationStatus.tiers.map((tier) => (
+              <div className="tier-status-item tier-status-item--muted" key={tier.title}>
+                <strong>{tier.title}</strong>
+                <span className="status pending">Pending</span>
+              </div>
             ))}
           </div>
-        ) : (
-          <p className="live-status-panel__empty">
-            Logs will appear here as each automated stage reports back.
-          </p>
-        )}
-      </div>
+        </div>
+      ) : (
+        /* ── Active submission state ── */
+        <>
+          {displayedSubmissionId && (
+            <p className="live-status-panel__id">
+              Submission: <code>{displayedSubmissionId}</code>
+            </p>
+          )}
+
+          <div className="tier-status-list">
+            {liveEvaluationStatus.tiers.map((tier, index) => {
+              const stateKey = tierStateMap[index];
+              const tierState = submission[stateKey];
+              return (
+                <div className="tier-status-item" key={tier.title}>
+                  <strong>{tier.title}</strong>
+                  <span className={`status ${getStatusClass(tierState)}`}>
+                    {getStatusLabel(tierState)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="live-event-stream">
+            <div className="live-event-stream__header">
+              <strong>Latest logs</strong>
+              <span>
+                {liveEvents.length > 0
+                  ? `${liveEvents.length} update${liveEvents.length === 1 ? "" : "s"}`
+                  : "Waiting for evaluator output"}
+              </span>
+            </div>
+
+            {liveEvents.length > 0 ? (
+              <div className="live-event-stream__list">
+                {liveEvents.map((event) => (
+                  <article
+                    className="live-event-card"
+                    key={event.id ?? `${event.type}-${event.timestamp}-${event.value}`}
+                  >
+                    <div className="live-event-card__head">
+                      <p>{event.value}</p>
+                      <span className={`status ${getEventTone(event.type)}`}>
+                        {event.type}
+                      </span>
+                      <time>{formatEventTimestamp(event.timestamp)}</time>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="live-status-panel__empty">
+                Logs will appear here as each automated stage reports back.
+              </p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -110,7 +110,7 @@ export type DashboardContent = {
   submissionWorkspace: SubmissionWorkspace;
   rubric: RubricItem[];
   activity: ActivityItem[];
-  problemStatement: ProblemStatementData;
+  problemStatements: ProblemStatementData[];
 };
 
 export type AppRole = "learner" | "reviewer" | "administrator";
@@ -212,6 +212,7 @@ export type PsSubmissionField = {
 export type ProblemStatementData = {
   id: string;
   title: string;
+  track: string;
   subtitle: string;
   tags: string[];
   difficulty: string;
