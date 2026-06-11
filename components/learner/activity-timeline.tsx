@@ -1,6 +1,6 @@
 import type { ActivityItem } from "@/types/assessment";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type ActivityTimelineProps = {
   activity: ActivityItem[];
@@ -30,11 +30,7 @@ function getEventStatusClass(type: string) {
 
 function formatEventTimestamp(timestamp: string) {
   const date = new Date(timestamp);
-
-  if (Number.isNaN(date.getTime())) {
-    return timestamp;
-  }
-
+  if (Number.isNaN(date.getTime())) return timestamp;
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short"
@@ -60,102 +56,83 @@ export function ActivityTimeline({
     <div className="panel activity-panel">
       <div className="panel__header">
         <div>
-          <p className="eyebrow">Recent Activities</p>
-          <h2>Live progress and support touchpoints</h2>
+          <p className="eyebrow">Recent Activity</p>
+          <h2>Submission history</h2>
         </div>
+        {activity.length > 0 && (
+          <span className="panel__badge">{activity.length} {activity.length === 1 ? "entry" : "entries"}</span>
+        )}
       </div>
 
-      <div className="timeline">
-        {isLoading ? (
-          <article className="timeline__item">
-            <div className="timeline__dot" />
-            <div>
-              <div className="timeline__head">
-                <strong>Loading submissions</strong>
-                <span>Refreshing activity</span>
-              </div>
-              <p>Recent assessment updates will appear here shortly.</p>
-            </div>
-          </article>
-        ) : null}
+      <div className="activity-list">
+        {isLoading && (
+          <div className="activity-row activity-row--empty">
+            <span>Loading submissions…</span>
+          </div>
+        )}
 
-        {!isLoading && errorMessage ? (
-          <article className="timeline__item">
-            <div className="timeline__dot" />
-            <div>
-              <div className="timeline__head">
-                <strong>Unable to load activity</strong>
-                <span>Backend unavailable</span>
-              </div>
-              <p>{errorMessage}</p>
-            </div>
-          </article>
-        ) : null}
-        {!isLoading && !errorMessage && activity.length === 0 ? (
-          <article className="timeline__item">
-            <div className="timeline__dot" />
-            <div>
-              <div className="timeline__head">
-                <strong>No submissions yet</strong>
-                <span>Waiting for the first attempt</span>
-              </div>
-              <p>Once a learner submits work, the latest review progress will show up here.</p>
-            </div>
-          </article>
-        ) : null}
+        {!isLoading && errorMessage && (
+          <div className="activity-row activity-row--empty">
+            <span className="status failed">Error</span>
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
-        {!isLoading && !errorMessage
-          ? activity.map((item) => {
-            const isExpanded = expandedItemIds.includes(item.id);
+        {!isLoading && !errorMessage && activity.length === 0 && (
+          <div className="activity-row activity-row--empty">
+            <span>No submissions yet — your first attempt will appear here.</span>
+          </div>
+        )}
 
-            return (
-              <article className="timeline__item" key={item.id}>
-                <div className="timeline__dot" />
-                <div>
-                  <div className="timeline__head timeline__head--with-status">
-                    <div>
-                      <strong>{item.title}</strong>
-                      <span>{item.meta}</span>
-                    </div>
-                    {item.status ? (
-                      <span className={`status ${getStatusClass(item.status)}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p>{item.detail}</p>
-                  <div className="timeline-actions">
-                    <button
-                      className="button button--secondary timeline-actions__toggle"
-                      onClick={() => toggleDetails(item.id)}
-                      aria-expanded={isExpanded}
-                    >
-                      {isExpanded ? "Hide Details" : "Show Details"}
-                    </button>
-                  </div>
-                  {isExpanded && item.events?.length ? (
-                    <div className="timeline-event-group">
+        {!isLoading && !errorMessage && activity.map((item) => {
+          const isExpanded = expandedItemIds.includes(item.id);
+          return (
+            <div className="activity-row" key={item.id}>
+              <div className="activity-row__main">
+                <span className="activity-row__title">{item.title}</span>
+                <span className="activity-row__meta">{item.meta}</span>
+                <div className="activity-row__right">
+                  {item.status && (
+                    <span className={`status ${getStatusClass(item.status)}`}>
+                      {getStatusLabel(item.status)}
+                    </span>
+                  )}
+                  <button
+                    className="text-link activity-row__toggle"
+                    onClick={() => toggleDetails(item.id)}
+                    type="button"
+                  >
+                    {isExpanded ? "Hide" : "Details"}
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="activity-row__expanded">
+                  <p className="activity-row__detail">{item.detail}</p>
+                  {item.events && item.events.length > 0 && (
+                    <div className="activity-event-list">
                       {item.events.map((event) => (
                         <div
-                          className="timeline-event"
+                          className="activity-event"
                           key={event.id ?? `${item.id}-${event.type}-${event.timestamp}-${event.value}`}
                         >
-                          <div className="timeline-event__head">
-                            <p>{event.value}</p>
-                            <span className={`status ${getEventStatusClass(event.type)}`}>
-                              {event.type}
-                            </span>
-                            <time>{formatEventTimestamp(event.timestamp)}</time>
-                          </div>
+                          <span className={`status ${getEventStatusClass(event.type)}`}>
+                            {event.type}
+                          </span>
+                          <span className="activity-event__value">{event.value}</span>
+                          <time className="activity-event__time">
+                            {formatEventTimestamp(event.timestamp)}
+                          </time>
                         </div>
                       ))}
                     </div>
-                  ) : null}
+                  )}
                 </div>
-              </article>
-            );
-          })
-          : null}
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

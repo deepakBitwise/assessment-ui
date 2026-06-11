@@ -264,7 +264,7 @@ export function LearnerDashboard({
 
       <ProblemStatementPanel problemStatement={content.problemStatement} />
 
-      <section className="sw-grid">
+      <section className={submission ? "sw-grid" : "sw-solo"}>
         <SubmissionWorkspace
           assessment={content.activeAssessment}
           workspace={content.submissionWorkspace}
@@ -276,12 +276,14 @@ export function LearnerDashboard({
           username={content.profile.username}
         />
 
-        <LiveStatusCard
-          liveEvaluationStatus={content.liveEvaluationStatus}
-          submission={submission}
-          liveEvents={liveSubmissionEvents}
-          currentSubmissionId={currentSubmissionId}
-        />
+        {submission && (
+          <LiveStatusCard
+            liveEvaluationStatus={content.liveEvaluationStatus}
+            submission={submission}
+            liveEvents={liveSubmissionEvents}
+            currentSubmissionId={currentSubmissionId}
+          />
+        )}
       </section>
 
       <section className="stack">
