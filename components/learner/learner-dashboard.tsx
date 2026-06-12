@@ -90,8 +90,8 @@ function normalizeSubmissionEvents(
 
   return history.events.map((event, index) => ({
     ...event,
-    timestamp: history.created_at,
-    id: `${history.submission_id}-${history.created_at}-${index}`
+    timestamp: event.timestamp ?? history.created_at,
+    id: event.id ?? `${history.submission_id}-${history.created_at}-${index}`
   }));
 }
 

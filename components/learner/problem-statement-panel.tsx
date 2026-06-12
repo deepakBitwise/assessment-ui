@@ -43,8 +43,7 @@ export function ProblemStatementPanel({ problemStatements, selectedId, onSelect 
           ))}
         </div>
       )}
-
-      {/* Header */}
+      
       <div className="panel__header ps-panel__header">
         <div>
           <p className="eyebrow">{ps.id} · {ps.track}</p>

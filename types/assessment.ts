@@ -234,7 +234,7 @@ export type SubmissionEventHistory = {
   id: string;
   submission_id: string;
   created_at: string;
-  events: SubmissionEvent[];
+  events: Array<SubmissionEvent & { timestamp?: string; id?: string }>;
 };
 
 export type Submission = {
