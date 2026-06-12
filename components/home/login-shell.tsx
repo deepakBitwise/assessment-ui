@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login, getCurrentUser, signup } from "@/lib/api";
 import { ROLE_ROUTES, storeAuthSession } from "@/lib/auth";
+import { PrivacyNoticeModal } from "@/components/privacy-notice-modal";
 
 type LoginShellProps = {
   routes: Array<{
@@ -27,6 +28,7 @@ export function LoginShell({ routes }: LoginShellProps) {
   const [revealSignupPassword, setRevealSignupPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +45,7 @@ export function LoginShell({ routes }: LoginShellProps) {
       const nextPath = new URLSearchParams(window.location.search).get("next");
       const targetPath = nextPath?.startsWith(roleRoute) ? nextPath : roleRoute;
 
-      router.push(targetPath as Parameters<typeof router.push>[0]);
+      setPendingRoute(targetPath);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
       setError(errorMessage);
@@ -68,7 +70,7 @@ export function LoginShell({ routes }: LoginShellProps) {
       const tokenData = await login(signupUsername.trim(), signupPassword);
       const user = await getCurrentUser(tokenData.access_token);
       storeAuthSession(tokenData, user);
-      router.push(ROLE_ROUTES[user.role]);
+      setPendingRoute(ROLE_ROUTES[user.role]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Sign up failed';
       setError(errorMessage);
@@ -77,7 +79,13 @@ export function LoginShell({ routes }: LoginShellProps) {
     }
   }
 
+  function handlePrivacyAccept() {
+    if (pendingRoute) router.push(pendingRoute as Parameters<typeof router.push>[0]);
+  }
+
   return (
+    <>
+    {pendingRoute && <PrivacyNoticeModal onAccept={handlePrivacyAccept} />}
     <section className="login-layout">
       <div className="hero__copy login-hero">
         <p className="eyebrow">Enterprise Sign-In</p>
@@ -308,5 +316,6 @@ export function LoginShell({ routes }: LoginShellProps) {
         </div>
       </div>
     </section>
+    </>
   );
 }
