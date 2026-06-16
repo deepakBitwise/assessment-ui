@@ -260,7 +260,7 @@ export function LearnerDashboard({
         const currentUser = getStoredUser();
         const submissions = currentUser
           ? allSubmissions.filter((s) => s.user_id === currentUser.username)
-          : allSubmissions;
+          : [];
         const eventHistoryEntries = await Promise.all(
           submissions.map(async (submission) => {
             try {
