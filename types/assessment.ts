@@ -238,6 +238,7 @@ export type SubmissionEventHistory = {
 };
 
 export type Submission = {
+  user_id: string;
   assessment_id: string;
   automated_check: SubmissionStatus;
   llm_judge: SubmissionStatus;
