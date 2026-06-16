@@ -1715,18 +1715,18 @@ textarea {
 /* Assessment switcher */
 .ps-switcher {
   display: flex;
-  gap: 10px;
-  padding: 20px 28px 0;
+  gap: 14px;
+  padding: 24px 28px 0;
   flex-wrap: wrap;
 }
 
 .ps-switcher__card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 20px 24px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.5);
   text-align: left;
   cursor: pointer;
@@ -1736,18 +1736,19 @@ textarea {
 }
 
 .ps-switcher__card:hover {
-  border-color: rgba(15, 118, 110, 0.3);
-  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(15, 118, 110, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.06);
 }
 
 .ps-switcher__card--active {
   border-color: var(--teal);
-  background: rgba(15, 118, 110, 0.05);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.08);
+  background: rgba(15, 118, 110, 0.06);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1), 0 4px 16px rgba(15, 118, 110, 0.08);
 }
 
 .ps-switcher__id {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1759,14 +1760,15 @@ textarea {
 }
 
 .ps-switcher__name {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
+  line-height: 1.2;
 }
 
 .ps-switcher__track {
-  font-size: 10px;
-  padding: 2px 7px;
+  font-size: 11px;
+  padding: 4px 10px;
   background: rgba(15, 118, 110, 0.08);
   color: var(--teal);
   border: 1px solid rgba(15, 118, 110, 0.15);
