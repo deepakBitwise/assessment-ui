@@ -11,10 +11,11 @@ import { SubmissionWorkspace } from "@/components/learner/submission-workspace";
 import {
   fetchSubmission,
   fetchSubmissionEvents,
-  fetchSubmissions
+  fetchSubmissions,
+  fetchUserByUsername
 } from "@/lib/api";
 
-import { getStoredUser } from "@/lib/auth";
+import { getStoredUser, getStoredAccessToken } from "@/lib/auth";
 
 import type {
   ActivityItem,
@@ -126,6 +127,7 @@ export function LearnerDashboard({
   initialContent
 }: LearnerDashboardProps) {
   const [content, setContent] = useState(initialContent);
+  const [enrolledAssessmentIds, setEnrolledAssessmentIds] = useState<string[] | null>(null);
   const [selectedPsId, setSelectedPsId] = useState(initialContent.problemStatements[0]?.id ?? "");
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [liveSubmissionEvents, setLiveSubmissionEvents] = useState<SubmissionEventLog[]>([]);
@@ -136,9 +138,13 @@ export function LearnerDashboard({
     initialContent.liveEvaluationStatus.submissionId
   );
 
+  const visibleProblemStatements = enrolledAssessmentIds === null
+    ? content.problemStatements
+    : content.problemStatements.filter(ps => enrolledAssessmentIds.includes(ps.assessmentId));
+
   const activeAssessmentId =
-    content.problemStatements.find((ps: { id: string; assessmentId: string }) => ps.id === selectedPsId)?.assessmentId ??
-    content.problemStatements[0]?.assessmentId ??
+    visibleProblemStatements.find((ps) => ps.id === selectedPsId)?.assessmentId ??
+    visibleProblemStatements[0]?.assessmentId ??
     "";
 
   useEffect(() => {
@@ -153,6 +159,29 @@ export function LearnerDashboard({
         role: user.role === "LEARNER" ? c.profile.role : user.role
       }
     }));
+  }, [initialContent]);
+
+  useEffect(() => {
+    const user = getStoredUser();
+    const token = getStoredAccessToken();
+    if (!user || !token) {
+      setEnrolledAssessmentIds([]);
+      return;
+    }
+    fetchUserByUsername(user.username, token)
+      .then(userData => {
+        const ids = userData.enrolled_assessments ?? [];
+        setEnrolledAssessmentIds(ids);
+        // If current selection is not in enrolled list, reset to first enrolled PS
+        setSelectedPsId(prev => {
+          const visible = initialContent.problemStatements.filter(ps =>
+            ids.includes(ps.assessmentId)
+          );
+          const stillVisible = visible.some(ps => ps.id === prev);
+          return stillVisible ? prev : (visible[0]?.id ?? "");
+        });
+      })
+      .catch(() => setEnrolledAssessmentIds([]));
   }, [initialContent]);
 
   useEffect(() => {
@@ -290,7 +319,7 @@ export function LearnerDashboard({
       />
 
       <ProblemStatementPanel
-        problemStatements={content.problemStatements}
+        problemStatements={visibleProblemStatements}
         selectedId={selectedPsId}
         onSelect={setSelectedPsId}
       />

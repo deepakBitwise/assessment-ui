@@ -435,6 +435,28 @@ export interface UserResponse {
     enrolled_assessments: string[];
 }
 
+export async function fetchUserByUsername(
+    username: string,
+    accessToken: string
+): Promise<UserResponse> {
+    const response = await fetch(
+        `${API_BASE_URL}/users/${encodeURIComponent(username)}`,
+        {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
+
+    return response.json() as Promise<UserResponse>;
+}
+
 export async function fetchUsers(accessToken: string): Promise<UserResponse[]> {
     const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'GET',
