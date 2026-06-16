@@ -1,14 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Assessment, AssessmentResponse, AssessmentUpdatePayload } from '@/types/assessment';
-import { fetchAssessments, updateAssessment } from '@/lib/api';
+import type { Assessment, AssessmentUpdatePayload } from '@/types/assessment';
+import { fetchAssessments, updateAssessment, fetchUsers, enrollUserInAssessment } from '@/lib/api';
+import type { UserResponse } from '@/lib/api';
+import { getStoredAccessToken } from '@/lib/auth';
 import styles from './assessment-list.module.css';
+
+type RoleFilter = 'LEARNER' | 'ALL';
 
 export function AssessmentList() {
     const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Edit state
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editFormData, setEditFormData] = useState<AssessmentUpdatePayload>({
         problem_statement: '',
@@ -16,8 +22,17 @@ export function AssessmentList() {
     });
     const [isSaving, setIsSaving] = useState(false);
 
+    // Enrollment state
+    const [enrollingAssessmentId, setEnrollingAssessmentId] = useState<string | null>(null);
+    const [users, setUsers] = useState<UserResponse[]>([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [usersError, setUsersError] = useState<string | null>(null);
+    const [enrollingUserId, setEnrollingUserId] = useState<string | null>(null);
+    const [enrolledPairs, setEnrolledPairs] = useState<Set<string>>(new Set());
+    const [roleFilter, setRoleFilter] = useState<RoleFilter>('LEARNER');
+
     useEffect(() => {
-        loadAssessments();
+        void loadAssessments();
     }, []);
 
     const loadAssessments = async () => {
@@ -28,13 +43,60 @@ export function AssessmentList() {
             setAssessments(data.data || []);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load assessments');
-            console.error('Error:', err);
         } finally {
             setLoading(false);
         }
     };
 
+    const loadUsers = async () => {
+        const token = getStoredAccessToken();
+        if (!token) {
+            setUsersError('Not authenticated. Please log in again.');
+            return;
+        }
+        try {
+            setUsersLoading(true);
+            setUsersError(null);
+            const data = await fetchUsers(token);
+            setUsers(data);
+        } catch (err) {
+            setUsersError(err instanceof Error ? err.message : 'Failed to load users');
+        } finally {
+            setUsersLoading(false);
+        }
+    };
+
+    const handleToggleEnrollment = async (assessmentId: string) => {
+        if (enrollingAssessmentId === assessmentId) {
+            setEnrollingAssessmentId(null);
+            return;
+        }
+        setEnrollingAssessmentId(assessmentId);
+        if (users.length === 0) {
+            await loadUsers();
+        }
+    };
+
+    const handleEnroll = async (username: string, userId: string, assessmentId: string) => {
+        const token = getStoredAccessToken();
+        if (!token) return;
+        try {
+            setEnrollingUserId(userId);
+            await enrollUserInAssessment(username, assessmentId, token);
+            setEnrolledPairs(prev => new Set([...prev, `${userId}:${assessmentId}`]));
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to enroll user');
+        } finally {
+            setEnrollingUserId(null);
+        }
+    };
+
+    const isEnrolled = (userId: string, assessmentId: string) =>
+        enrolledPairs.has(`${userId}:${assessmentId}`);
+
+    // Edit handlers
     const handleEditClick = (assessment: Assessment) => {
+        setEnrollingAssessmentId(null);
         setEditingId(assessment.id);
         setEditFormData({
             problem_statement: assessment.problem_statement,
@@ -67,29 +129,20 @@ export function AssessmentList() {
 
     const handleSave = async () => {
         if (!editingId) return;
-
         try {
             setIsSaving(true);
             await updateAssessment(editingId, editFormData);
-
-            // Update local state
             setAssessments(
-                assessments.map((assessment) =>
-                    assessment.id === editingId
-                        ? {
-                            ...assessment,
-                            problem_statement: editFormData.problem_statement,
-                            deliverables: editFormData.deliverables,
-                        }
-                        : assessment
+                assessments.map(a =>
+                    a.id === editingId
+                        ? { ...a, problem_statement: editFormData.problem_statement, deliverables: editFormData.deliverables }
+                        : a
                 )
             );
-
             setEditingId(null);
             setEditFormData({ problem_statement: '', deliverables: [] });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save assessment');
-            console.error('Error saving:', err);
         } finally {
             setIsSaving(false);
         }
@@ -103,7 +156,7 @@ export function AssessmentList() {
         return (
             <div className={styles.container}>
                 <p className={styles.error}>Error: {error}</p>
-                <button onClick={loadAssessments} className={styles.retryButton}>
+                <button onClick={() => void loadAssessments()} className={styles.retryButton}>
                     Retry
                 </button>
             </div>
@@ -114,11 +167,14 @@ export function AssessmentList() {
         return <div className={styles.container}><p>No assessments found.</p></div>;
     }
 
+    const visibleUsers =
+        roleFilter === 'LEARNER' ? users.filter(u => u.role === 'LEARNER') : users;
+
     return (
         <div className={styles.container}>
             <h1>Assessments</h1>
             <div className={styles.assessmentGrid}>
-                {assessments.map((assessment) => (
+                {assessments.map(assessment => (
                     <div key={assessment.id} className={styles.assessmentCard}>
                         <h3>{assessment.id}</h3>
 
@@ -128,11 +184,8 @@ export function AssessmentList() {
                                     <label>Scenario</label>
                                     <textarea
                                         value={editFormData.problem_statement}
-                                        onChange={(e) =>
-                                            setEditFormData({
-                                                ...editFormData,
-                                                problem_statement: e.target.value,
-                                            })
+                                        onChange={e =>
+                                            setEditFormData({ ...editFormData, problem_statement: e.target.value })
                                         }
                                         className={styles.textarea}
                                         rows={4}
@@ -147,7 +200,7 @@ export function AssessmentList() {
                                                 <input
                                                     type="text"
                                                     value={deliverable}
-                                                    onChange={(e) => handleDeliverableChange(index, e.target.value)}
+                                                    onChange={e => handleDeliverableChange(index, e.target.value)}
                                                     placeholder="Enter deliverable"
                                                     className={styles.input}
                                                 />
@@ -174,18 +227,10 @@ export function AssessmentList() {
                                 </div>
 
                                 <div className={styles.buttonGroup}>
-                                    <button
-                                        onClick={handleSave}
-                                        disabled={isSaving}
-                                        className={styles.saveButton}
-                                    >
+                                    <button onClick={handleSave} disabled={isSaving} className={styles.saveButton}>
                                         {isSaving ? 'Saving...' : 'Save'}
                                     </button>
-                                    <button
-                                        onClick={handleCancel}
-                                        disabled={isSaving}
-                                        className={styles.cancelButton}
-                                    >
+                                    <button onClick={handleCancel} disabled={isSaving} className={styles.cancelButton}>
                                         Cancel
                                     </button>
                                 </div>
@@ -197,23 +242,126 @@ export function AssessmentList() {
                                         <h4>Scenario</h4>
                                         <p>{assessment.problem_statement}</p>
                                     </div>
-
                                     <div className={styles.box}>
                                         <h4>Deliverables</h4>
                                         <ul>
-                                            {assessment.deliverables.map((deliverable, index) => (
-                                                <li key={index}>{deliverable}</li>
+                                            {assessment.deliverables.map((d, i) => (
+                                                <li key={i}>{d}</li>
                                             ))}
                                         </ul>
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => handleEditClick(assessment)}
-                                    className={styles.editButton}
-                                >
-                                    Edit
-                                </button>
+                                {/* Action buttons */}
+                                <div className={styles.cardActions}>
+                                    <button
+                                        onClick={() => handleEditClick(assessment)}
+                                        className={styles.editButton}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => void handleToggleEnrollment(assessment.id)}
+                                        className={
+                                            enrollingAssessmentId === assessment.id
+                                                ? `${styles.enrollToggleBtn} ${styles.enrollToggleBtnActive}`
+                                                : styles.enrollToggleBtn
+                                        }
+                                    >
+                                        {enrollingAssessmentId === assessment.id
+                                            ? 'Close Enrollment'
+                                            : 'Manage Enrollment'}
+                                    </button>
+                                </div>
+
+                                {/* Enrollment panel */}
+                                {enrollingAssessmentId === assessment.id && (
+                                    <div className={styles.enrollmentPanel}>
+                                        <div className={styles.enrollmentPanelHeader}>
+                                            <h4 className={styles.enrollmentPanelTitle}>
+                                                User Enrollment
+                                            </h4>
+                                            <div className={styles.filterRow}>
+                                                {(['LEARNER', 'ALL'] as const).map(f => (
+                                                    <button
+                                                        key={f}
+                                                        type="button"
+                                                        className={
+                                                            roleFilter === f
+                                                                ? `${styles.filterBtn} ${styles.filterBtnActive}`
+                                                                : styles.filterBtn
+                                                        }
+                                                        onClick={() => setRoleFilter(f)}
+                                                    >
+                                                        {f === 'LEARNER' ? 'Learners Only' : 'All Users'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {usersLoading ? (
+                                            <p className={styles.enrollmentLoading}>Loading users...</p>
+                                        ) : usersError ? (
+                                            <div>
+                                                <p className={styles.enrollmentError}>{usersError}</p>
+                                                <button
+                                                    className={styles.retryButton}
+                                                    onClick={() => void loadUsers()}
+                                                >
+                                                    Retry
+                                                </button>
+                                            </div>
+                                        ) : visibleUsers.length === 0 ? (
+                                            <p className={styles.noUsers}>No users found.</p>
+                                        ) : (
+                                            <div className={styles.userList}>
+                                                {visibleUsers.map(user => (
+                                                    <div key={user.id} className={styles.userRow}>
+                                                        <div className={styles.userAvatar}>
+                                                            {(user.full_name || user.username)
+                                                                .charAt(0)
+                                                                .toUpperCase()}
+                                                        </div>
+                                                        <div className={styles.userInfo}>
+                                                            <p className={styles.userName}>
+                                                                {user.full_name || user.username}
+                                                            </p>
+                                                            <p className={styles.userEmail}>
+                                                                {user.email}
+                                                            </p>
+                                                        </div>
+                                                        <span
+                                                            className={`${styles.roleBadge} ${styles[`roleBadge${user.role}`]}`}
+                                                        >
+                                                            {user.role}
+                                                        </span>
+                                                        {isEnrolled(user.id, assessment.id) ? (
+                                                            <span className={styles.enrolledBadge}>
+                                                                Enrolled ✓
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                className={styles.enrollActionBtn}
+                                                                disabled={enrollingUserId === user.id}
+                                                                onClick={() =>
+                                                                    void handleEnroll(
+                                                                        user.username,
+                                                                        user.id,
+                                                                        assessment.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                {enrollingUserId === user.id
+                                                                    ? '...'
+                                                                    : 'Enroll'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>

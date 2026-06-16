@@ -423,6 +423,54 @@ export async function pushSubmissionEvents(
     await Promise.all(events.map((event) => pushSubmissionEvent(submissionId, event)));
 }
 
+export interface UserResponse {
+    email: string;
+    username: string;
+    is_active: boolean;
+    is_superuser: boolean;
+    full_name: string | null;
+    role: 'ADMIN' | 'REVIEWER' | 'LEARNER';
+    id: string;
+    created_at: string;
+}
+
+export async function fetchUsers(accessToken: string): Promise<UserResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch users: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.data ?? []);
+}
+
+export async function enrollUserInAssessment(
+    username: string,
+    assessmentId: string,
+    accessToken: string
+): Promise<void> {
+    const response = await fetch(
+        `${API_BASE_URL}/users/${encodeURIComponent(username)}/enrollments/${assessmentId}`,
+        {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Failed to enroll user: ${response.statusText}`);
+    }
+}
+
 type DownloadUrlResponse = {
     download_url?: string;
     url?: string;

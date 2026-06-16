@@ -205,7 +205,7 @@ export function SubmissionsPanel() {
             ))}
           </div>
 
-          <div className="reviewer-queue">
+          <div className="reviewer-queue" style={{ height: '640px', overflowY: 'auto', paddingRight: '4px' }}>
             {filtered.map(sub => {
               const verdict = overallStatus(sub);
               return (
