@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Assessment, AssessmentUpdatePayload } from '@/types/assessment';
-import { fetchAssessments, updateAssessment, fetchUsers, enrollUserInAssessment } from '@/lib/api';
+import { fetchAssessments, updateAssessment, fetchUsers, enrollUserInAssessment, unenrollUserFromAssessment } from '@/lib/api';
 import type { UserResponse } from '@/lib/api';
 import { getStoredAccessToken } from '@/lib/auth';
 import styles from './assessment-list.module.css';
@@ -59,6 +59,13 @@ export function AssessmentList() {
             setUsersError(null);
             const data = await fetchUsers(token);
             setUsers(data);
+            const pairs = new Set<string>();
+            for (const user of data) {
+                for (const assessmentId of user.enrolled_assessments ?? []) {
+                    pairs.add(`${user.id}:${assessmentId}`);
+                }
+            }
+            setEnrolledPairs(pairs);
         } catch (err) {
             setUsersError(err instanceof Error ? err.message : 'Failed to load users');
         } finally {
@@ -86,6 +93,24 @@ export function AssessmentList() {
             setEnrolledPairs(prev => new Set([...prev, `${userId}:${assessmentId}`]));
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Failed to enroll user');
+        } finally {
+            setEnrollingUserId(null);
+        }
+    };
+
+    const handleUnenroll = async (username: string, userId: string, assessmentId: string) => {
+        const token = getStoredAccessToken();
+        if (!token) return;
+        try {
+            setEnrollingUserId(userId);
+            await unenrollUserFromAssessment(username, assessmentId, token);
+            setEnrolledPairs(prev => {
+                const next = new Set(prev);
+                next.delete(`${userId}:${assessmentId}`);
+                return next;
+            });
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to unenroll user');
         } finally {
             setEnrollingUserId(null);
         }
@@ -336,9 +361,26 @@ export function AssessmentList() {
                                                             {user.role}
                                                         </span>
                                                         {isEnrolled(user.id, assessment.id) ? (
-                                                            <span className={styles.enrolledBadge}>
-                                                                Enrolled ✓
-                                                            </span>
+                                                            <div className={styles.enrolledActions}>
+                                                                <span className={styles.enrolledBadge}>
+                                                                    Enrolled ✓
+                                                                </span>
+                                                                <button
+                                                                    className={styles.unenrollActionBtn}
+                                                                    disabled={enrollingUserId === user.id}
+                                                                    onClick={() =>
+                                                                        void handleUnenroll(
+                                                                            user.username,
+                                                                            user.id,
+                                                                            assessment.id
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {enrollingUserId === user.id
+                                                                        ? '...'
+                                                                        : 'Unenroll'}
+                                                                </button>
+                                                            </div>
                                                         ) : (
                                                             <button
                                                                 className={styles.enrollActionBtn}

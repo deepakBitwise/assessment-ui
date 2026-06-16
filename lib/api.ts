@@ -432,6 +432,7 @@ export interface UserResponse {
     role: 'ADMIN' | 'REVIEWER' | 'LEARNER';
     id: string;
     created_at: string;
+    enrolled_assessments: string[];
 }
 
 export async function fetchUsers(accessToken: string): Promise<UserResponse[]> {
@@ -468,6 +469,26 @@ export async function enrollUserInAssessment(
 
     if (!response.ok) {
         throw new Error(`Failed to enroll user: ${response.statusText}`);
+    }
+}
+
+export async function unenrollUserFromAssessment(
+    username: string,
+    assessmentId: string,
+    accessToken: string
+): Promise<void> {
+    const response = await fetch(
+        `${API_BASE_URL}/users/${encodeURIComponent(username)}/enrollments/${assessmentId}`,
+        {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Failed to unenroll user: ${response.statusText}`);
     }
 }
 
