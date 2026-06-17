@@ -46,10 +46,6 @@ function fmtDate(dateStr: string): string {
   });
 }
 
-function shortId(id: string): string {
-  return id.slice(0, 8).toUpperCase();
-}
-
 export function SubmissionsPanel() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,7 +214,7 @@ export function SubmissionsPanel() {
                 >
                   <div className="queue-item__head">
                     <strong style={{ fontFamily: 'monospace', fontSize: '0.88rem' }}>
-                      {shortId(sub.id)}
+                      {(sub.id)}
                     </strong>
                     <span className={statusCls(verdict)}>{verdict}</span>
                   </div>
