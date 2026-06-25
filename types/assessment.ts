@@ -251,3 +251,59 @@ export type Submission = {
 export type SubmissionDetail = Submission & {
   submission_id?: string;
 };
+
+export type JudgeRunScore = {
+  score: number;
+  citation: string;
+  dimension: string;
+  rationale: string;
+};
+
+export type JudgeRun = {
+  error: string;
+  run_no: number;
+  scores: JudgeRunScore[];
+  confidence: number;
+  parse_success: boolean;
+  overall_rationale: string;
+  low_confidence_reason: string;
+};
+
+export type DimensionScoreBreakdown = {
+  weight: number;
+  raw_score: number;
+  contribution: number;
+};
+
+export type LLMJudgeResult = {
+  id: string;
+  submission_id: string;
+  assessment_id: string | null;
+  project_type: string | null;
+  level: string | null;
+  attempt_number: number | null;
+  rubric_version: string | null;
+  tier: string | null;
+  evaluated_at: string | null;
+  tier1_score: number | null;
+  tier1_max: number | null;
+  tier2_score: number | null;
+  tier2_max: number | null;
+  tier2_weighted_raw: number | null;
+  final_score: number | null;
+  final_score_max: number | null;
+  weighted_score: number | null;
+  judge_runs: JudgeRun[];
+  median_scores: Record<string, number>;
+  score_dispersion: Record<string, number>;
+  dimension_citations: Record<string, string>;
+  dimension_rationales: Record<string, string>;
+  score_breakdown: Record<string, DimensionScoreBreakdown>;
+  provisional_verdict: string | null;
+  needs_human_review: boolean;
+  review_reasons: string[];
+  failing_dimensions: string[];
+  next_action: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
