@@ -101,7 +101,7 @@ export function ActivityTimeline({
                   )}
                   {onViewReport && (
                     <button
-                      className="text-link activity-row__report-btn"
+                      className="activity-row__report-btn"
                       onClick={() => onViewReport(item.id)}
                       type="button"
                       title="View LLM judge evaluation report"

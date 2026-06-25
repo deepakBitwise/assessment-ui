@@ -1347,7 +1347,7 @@ textarea {
 }
 
 .activity-row__toggle {
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -2774,12 +2774,28 @@ textarea {
 
 /* Activity timeline "View Report" button */
 .activity-row__report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border: 1.5px solid rgba(15, 118, 110, 0.35);
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.06);
   color: var(--teal);
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .activity-row__report-btn:hover {
-  text-decoration: underline;
+  background: rgba(15, 118, 110, 0.12);
+  border-color: rgba(15, 118, 110, 0.55);
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.14);
 }
 
 /* Responsive */
@@ -2817,32 +2833,34 @@ textarea {
   }
 }
 
-/* Print styles */
+/* Print styles — modal is portalled to body, so siblings can be hidden cleanly */
 @media print {
   body > *:not(.report-overlay) {
     display: none !important;
   }
 
   .report-overlay {
-    position: static;
-    background: none;
-    backdrop-filter: none;
-    padding: 0;
-    overflow: visible;
+    position: static !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
   }
 
   .report-modal {
-    width: 100%;
-    box-shadow: none;
-    border-radius: 0;
-    border: none;
-    overflow: visible;
+    width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    overflow: visible !important;
   }
 
   .report-modal__header {
-    position: static;
-    backdrop-filter: none;
-    border-bottom: 1px solid #ddd;
+    position: static !important;
+    backdrop-filter: none !important;
+    border-bottom: 1px solid #ddd !important;
+    background: white !important;
   }
 
   .report-modal__close,
@@ -2855,11 +2873,19 @@ textarea {
   }
 
   .report-run__chevron {
-    display: none;
+    display: none !important;
   }
 
   .report-score-bar__fill {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  .report-verdict,
+  .report-dimension,
+  .report-score-card,
+  .report-run,
+  .report-review-notice {
+    break-inside: avoid;
   }
 }

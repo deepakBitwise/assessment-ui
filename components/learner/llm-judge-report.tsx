@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { fetchLLMJudgeResult } from "@/lib/api";
 import type { JudgeRun, LLMJudgeResult } from "@/types/assessment";
@@ -135,6 +136,11 @@ export function LLMJudgeReportModal({ submissionId, onClose }: Props) {
   const [result, setResult] = useState<LLMJudgeResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -179,7 +185,9 @@ export function LLMJudgeReportModal({ submissionId, onClose }: Props) {
   const scoreBreakdown = result?.score_breakdown ?? {};
   const hasBreakdown = Object.keys(scoreBreakdown).length > 0;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className="report-overlay"
       onClick={(e) => {
@@ -497,6 +505,7 @@ export function LLMJudgeReportModal({ submissionId, onClose }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
