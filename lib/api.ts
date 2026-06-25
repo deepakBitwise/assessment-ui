@@ -2,6 +2,7 @@ import type {
     Assessment,
     AssessmentResponse,
     AssessmentUpdatePayload,
+    LLMJudgeResult,
     SubmissionDetail,
     SubmissionEventHistory,
     Submission,
@@ -521,6 +522,14 @@ type DownloadUrlResponse = {
     file_url?: string;
     public_url?: string;
 };
+
+export async function fetchLLMJudgeResult(submissionId: string): Promise<LLMJudgeResult> {
+    const response = await fetch(`${API_BASE_URL}/llm-judge/results/${encodeURIComponent(submissionId)}`);
+    if (!response.ok) {
+        throw new Error(`LLM judge result not available (${response.status})`);
+    }
+    return response.json() as Promise<LLMJudgeResult>;
+}
 
 export async function getPresignedDownloadUrl(filePath: string): Promise<string> {
     const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');

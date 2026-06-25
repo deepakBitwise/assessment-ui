@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ActivityTimeline } from "@/components/learner/activity-timeline";
 import { HeroSection } from "@/components/learner/hero-section";
 import { LiveStatusCard } from "@/components/learner/live-status-card";
+import { LLMJudgeReportModal } from "@/components/learner/llm-judge-report";
 import { ProblemStatementPanel } from "@/components/learner/problem-statement-panel";
 import { SubmissionWorkspace } from "@/components/learner/submission-workspace";
 
@@ -137,6 +138,7 @@ export function LearnerDashboard({
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string>(
     initialContent.liveEvaluationStatus.submissionId
   );
+  const [reportSubmissionId, setReportSubmissionId] = useState<string | null>(null);
 
   const visibleProblemStatements = enrolledAssessmentIds === null
     ? content.problemStatements
@@ -349,8 +351,16 @@ export function LearnerDashboard({
           activity={activity}
           isLoading={activityLoading}
           errorMessage={activityError}
+          onViewReport={(id) => setReportSubmissionId(id)}
         />
       </section>
+
+      {reportSubmissionId && (
+        <LLMJudgeReportModal
+          submissionId={reportSubmissionId}
+          onClose={() => setReportSubmissionId(null)}
+        />
+      )}
     </>
   );
 }

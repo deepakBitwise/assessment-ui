@@ -6,6 +6,7 @@ type ActivityTimelineProps = {
   activity: ActivityItem[];
   isLoading?: boolean;
   errorMessage?: string | null;
+  onViewReport?: (submissionId: string) => void;
 };
 
 function getStatusClass(status?: string) {
@@ -40,7 +41,8 @@ function formatEventTimestamp(timestamp: string) {
 export function ActivityTimeline({
   activity,
   isLoading = false,
-  errorMessage = null
+  errorMessage = null,
+  onViewReport
 }: ActivityTimelineProps) {
   const [expandedItemIds, setExpandedItemIds] = useState<string[]>([]);
 
@@ -96,6 +98,16 @@ export function ActivityTimeline({
                     <span className={`status ${getStatusClass(item.status)}`}>
                       {getStatusLabel(item.status)}
                     </span>
+                  )}
+                  {onViewReport && (
+                    <button
+                      className="text-link activity-row__report-btn"
+                      onClick={() => onViewReport(item.id)}
+                      type="button"
+                      title="View LLM judge evaluation report"
+                    >
+                      View Report
+                    </button>
                   )}
                   <button
                     className="text-link activity-row__toggle"
