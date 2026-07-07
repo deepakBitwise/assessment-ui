@@ -2,33 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { fetchSubmissions, fetchSubmission, getPresignedDownloadUrl } from '@/lib/api';
+import {
+  exportSubmissionsToExcel,
+  fetchSubmissionDetailsForExport,
+  type SubmissionExportDetail,
+} from '@/lib/submission-export';
+import { getOverallSubmissionStatus } from '@/lib/submission-status';
 import type { Submission, SubmissionDetail, SubmissionStatus } from '@/types/assessment';
 
-type SubmissionWithFile = SubmissionDetail & {
-  attachment_object_name?: string | null;
-};
-
 type StatusFilter = 'ALL' | SubmissionStatus;
-
-function overallStatus(
-  s: Pick<Submission, 'automated_check' | 'llm_judge' | 'human_reviewer'>
-): SubmissionStatus {
-  if (
-    s.automated_check === 'REJECTED' ||
-    s.llm_judge === 'REJECTED' ||
-    s.human_reviewer === 'REJECTED'
-  ) {
-    return 'REJECTED';
-  }
-  if (
-    s.automated_check === 'PASSED' &&
-    s.llm_judge === 'PASSED' &&
-    s.human_reviewer === 'PASSED'
-  ) {
-    return 'PASSED';
-  }
-  return 'PENDING';
-}
 
 function statusCls(status: SubmissionStatus): string {
   if (status === 'PASSED') return 'status passed';
@@ -51,9 +33,11 @@ export function SubmissionsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>('ALL');
-  const [selected, setSelected] = useState<SubmissionWithFile | null>(null);
+  const [selected, setSelected] = useState<SubmissionDetail | null>(null);
+  const [detailCache, setDetailCache] = useState<Record<string, SubmissionDetail>>({});
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     void load();
@@ -63,10 +47,15 @@ export function SubmissionsPanel() {
     try {
       setLoading(true);
       setError(null);
+
       const data = await fetchSubmissions();
       setSubmissions(data);
+      setDetailCache({});
+
       if (data.length > 0) {
-        void loadDetail(data[0].id);
+        void loadDetail(data[0].id, { preferCache: false });
+      } else {
+        setSelected(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load submissions');
@@ -75,10 +64,18 @@ export function SubmissionsPanel() {
     }
   }
 
-  async function loadDetail(id: string) {
+  async function loadDetail(id: string, options: { preferCache?: boolean } = {}) {
     try {
       setLoadingDetail(true);
-      const detail = (await fetchSubmission(id)) as SubmissionWithFile;
+
+      const cachedDetail = options.preferCache === false ? null : detailCache[id];
+      if (cachedDetail) {
+        setSelected(cachedDetail);
+        return;
+      }
+
+      const detail = await fetchSubmission(id);
+      setDetailCache(prev => ({ ...prev, [detail.id]: detail }));
       setSelected(detail);
     } catch (err) {
       console.error('Submission detail error:', err);
@@ -92,6 +89,7 @@ export function SubmissionsPanel() {
       alert('No file attached to this submission');
       return;
     }
+
     try {
       setDownloading(true);
       const url = await getPresignedDownloadUrl(selected.attachment_object_name);
@@ -104,21 +102,56 @@ export function SubmissionsPanel() {
     }
   }
 
+  async function exportAllSubmissions() {
+    try {
+      setExporting(true);
+
+      const details = await fetchSubmissionDetailsForExport(
+        submissions,
+        async submissionId => fetchSubmission(submissionId) as Promise<SubmissionExportDetail>,
+        {
+          cache: detailCache,
+          concurrency: 5,
+        }
+      );
+
+      setDetailCache(prev => {
+        const nextCache = { ...prev };
+        details.forEach(detail => {
+          nextCache[detail.id] = detail;
+        });
+        return nextCache;
+      });
+
+      await exportSubmissionsToExcel(details, {
+        fileNamePrefix: 'admin-submissions',
+        sheetName: 'Submissions',
+      });
+    } catch (err) {
+      console.error('Submission export error:', err);
+      alert('Failed to export submissions. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const counts = {
     ALL: submissions.length,
-    PASSED: submissions.filter(s => overallStatus(s) === 'PASSED').length,
-    PENDING: submissions.filter(s => overallStatus(s) === 'PENDING').length,
-    REJECTED: submissions.filter(s => overallStatus(s) === 'REJECTED').length,
+    PASSED: submissions.filter(s => getOverallSubmissionStatus(s) === 'PASSED').length,
+    PENDING: submissions.filter(s => getOverallSubmissionStatus(s) === 'PENDING').length,
+    REJECTED: submissions.filter(s => getOverallSubmissionStatus(s) === 'REJECTED').length,
   };
 
   const filtered =
-    filter === 'ALL' ? submissions : submissions.filter(s => overallStatus(s) === filter);
+    filter === 'ALL'
+      ? submissions
+      : submissions.filter(s => getOverallSubmissionStatus(s) === filter);
 
   if (loading) {
     return (
       <div className="panel" style={{ padding: '2rem' }}>
         <p className="eyebrow">Loading</p>
-        <h2>Fetching Submissions…</h2>
+        <h2>Fetching Submissions...</h2>
       </div>
     );
   }
@@ -148,45 +181,52 @@ export function SubmissionsPanel() {
 
   return (
     <>
-      {/* Summary header */}
       <div className="reviewer-hero">
         <div className="hero__copy">
           <p className="eyebrow">Admin Console</p>
           <h1>All Submissions</h1>
           <p style={{ color: 'var(--muted)', marginTop: '10px', lineHeight: 1.7 }}>
-            View, inspect, and download every learner submission across all assessments.
+            View, inspect, download, and export every learner submission across all assessments.
           </p>
         </div>
         <div className="panel">
           <p className="eyebrow">Queue Summary</p>
           <h2>{submissions.length} Total</h2>
           <p className="spotlight-panel__summary">
-            Passed: {counts.PASSED} &nbsp;·&nbsp; Pending: {counts.PENDING} &nbsp;·&nbsp; Rejected:{' '}
-            {counts.REJECTED}
+            Passed: {counts.PASSED} | Pending: {counts.PENDING} | Rejected: {counts.REJECTED}
           </p>
         </div>
       </div>
 
-      {/* List + Detail */}
       <section className="layout-grid layout-grid--bottom">
-        {/* LEFT — queue */}
         <div className="panel reviewer-queue-panel">
           <div className="panel__header">
             <div>
               <p className="eyebrow">Submission Queue</p>
               <h2>Submissions</h2>
             </div>
-            <button
-              type="button"
-              className="button button--ghost"
-              style={{ fontSize: '0.82rem', padding: '8px 14px' }}
-              onClick={() => void load()}
-            >
-              Refresh
-            </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="button button--primary"
+                style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+                onClick={() => void exportAllSubmissions()}
+                disabled={exporting}
+              >
+                {exporting ? 'Exporting...' : 'Export Excel'}
+              </button>
+              <button
+                type="button"
+                className="button button--ghost"
+                style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+                onClick={() => void load()}
+                disabled={exporting}
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
-          {/* Status filters */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
             {(['ALL', 'PENDING', 'PASSED', 'REJECTED'] as const).map(f => (
               <button
@@ -203,7 +243,7 @@ export function SubmissionsPanel() {
 
           <div className="reviewer-queue" style={{ height: '640px', overflowY: 'auto', paddingRight: '4px' }}>
             {filtered.map(sub => {
-              const verdict = overallStatus(sub);
+              const verdict = getOverallSubmissionStatus(sub);
               return (
                 <button
                   key={sub.id}
@@ -213,21 +253,14 @@ export function SubmissionsPanel() {
                   onClick={() => void loadDetail(sub.id)}
                 >
                   <div className="queue-item__head">
-                    <strong style={{ fontFamily: 'monospace', fontSize: '0.88rem' }}>
-                      {(sub.id)}
-                    </strong>
+                    <strong style={{ fontFamily: 'monospace', fontSize: '0.88rem' }}>{sub.id}</strong>
                     <span className={statusCls(verdict)}>{verdict}</span>
                   </div>
-                  <p>
-                    User:{' '}
-                    {sub.user_id.length > 28
-                      ? sub.user_id.slice(0, 28) + '…'
-                      : sub.user_id}
-                  </p>
+                  <p>User: {sub.user_id.length > 28 ? `${sub.user_id.slice(0, 28)}...` : sub.user_id}</p>
                   <p>
                     Assessment:{' '}
                     {sub.assessment_id.length > 24
-                      ? sub.assessment_id.slice(0, 24) + '…'
+                      ? `${sub.assessment_id.slice(0, 24)}...`
                       : sub.assessment_id}
                   </p>
                   <span className="queue-item__link">
@@ -244,22 +277,18 @@ export function SubmissionsPanel() {
             {filtered.length === 0 && (
               <div className="brief-card">
                 <p className="eyebrow">No Results</p>
-                <p>
-                  No{filter !== 'ALL' ? ` ${filter.toLowerCase()}` : ''} submissions found.
-                </p>
+                <p>No{filter !== 'ALL' ? ` ${filter.toLowerCase()}` : ''} submissions found.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* RIGHT — detail */}
         {selected && (
           <div className="panel reviewer-detail-panel">
             {loadingDetail ? (
-              <p style={{ color: 'var(--muted)' }}>Loading details…</p>
+              <p style={{ color: 'var(--muted)' }}>Loading details...</p>
             ) : (
               <>
-                {/* Header */}
                 <div className="panel__header">
                   <div>
                     <p className="eyebrow">Submission Detail</p>
@@ -275,12 +304,11 @@ export function SubmissionsPanel() {
                       {selected.id}
                     </h2>
                   </div>
-                  <span className={statusCls(overallStatus(selected))}>
-                    {overallStatus(selected)}
+                  <span className={statusCls(getOverallSubmissionStatus(selected))}>
+                    {getOverallSubmissionStatus(selected)}
                   </span>
                 </div>
 
-                {/* IDs & Timestamps */}
                 <div className="reviewer-detail-grid" style={{ marginBottom: '16px' }}>
                   <div className="detail-stat">
                     <span>User ID</span>
@@ -308,38 +336,30 @@ export function SubmissionsPanel() {
                   </div>
                 </div>
 
-                {/* Evaluation pipeline */}
                 <div className="brief-card" style={{ marginBottom: '16px' }}>
                   <p className="eyebrow">Evaluation Pipeline</p>
                   <div className="reviewer-detail-grid" style={{ marginTop: '14px' }}>
                     <div className="detail-stat">
                       <span>Automated Check</span>
-                      <span className={statusCls(selected.automated_check)}>
-                        {selected.automated_check}
-                      </span>
+                      <span className={statusCls(selected.automated_check)}>{selected.automated_check}</span>
                     </div>
                     <div className="detail-stat">
                       <span>LLM Judge</span>
-                      <span className={statusCls(selected.llm_judge)}>
-                        {selected.llm_judge}
-                      </span>
+                      <span className={statusCls(selected.llm_judge)}>{selected.llm_judge}</span>
                     </div>
                     <div className="detail-stat">
                       <span>Human Reviewer</span>
-                      <span className={statusCls(selected.human_reviewer)}>
-                        {selected.human_reviewer}
-                      </span>
+                      <span className={statusCls(selected.human_reviewer)}>{selected.human_reviewer}</span>
                     </div>
                     <div className="detail-stat">
                       <span>Overall Verdict</span>
-                      <span className={statusCls(overallStatus(selected))}>
-                        {overallStatus(selected)}
+                      <span className={statusCls(getOverallSubmissionStatus(selected))}>
+                        {getOverallSubmissionStatus(selected)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* File download */}
                 <div className="brief-card brief-card--accent">
                   <p className="eyebrow">Submitted File</p>
                   {selected.attachment_object_name ? (
@@ -361,7 +381,7 @@ export function SubmissionsPanel() {
                         disabled={downloading}
                         style={{ marginTop: '14px' }}
                       >
-                        {downloading ? 'Preparing…' : 'Download Submission File'}
+                        {downloading ? 'Preparing...' : 'Download Submission File'}
                       </button>
                     </>
                   ) : (

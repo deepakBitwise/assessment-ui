@@ -250,6 +250,7 @@ export type Submission = {
 
 export type SubmissionDetail = Submission & {
   submission_id?: string;
+  attachment_object_name?: string | null;
 };
 
 export type JudgeRunScore = {
