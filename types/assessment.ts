@@ -148,6 +148,23 @@ export type RouteCard = {
   status?: string;
 };
 
+export type ActiveAssessmentEvidenceCard = {
+  label: string;
+  value: string;
+  note: string;
+};
+
+export type ActiveAssessment = {
+  eyebrow: string;
+  title: string;
+  status: string;
+  summary: string;
+  evidenceCards: ActiveAssessmentEvidenceCard[];
+  scenarioTitle: string;
+  scenarioBody: string;
+  deliverables: string[];
+};
+
 export type Assessment = {
   id: string;
   problem_statement: string;
